@@ -162,7 +162,7 @@ DrawLayout's editing overlay drifted 3–4 px below the canvas text further down
 - Layout for a later repo split: `src/extension.ts` (host, esbuild → CJS),
   `src/webview/` (Vite, lazy MathJax chunks), `src/html.ts` / `protocol.ts` /
   `sync.ts` (no VS Code or DOM, shared and testable). Its only tie to this repo
-  is the `@simplemark/codemirror` / `@simplemark/model` dependency.
+  is the `@simple-mark/codemirror` / `@simple-mark/model` dependency.
 
 ### DrawLayout (Markdown text)
 
@@ -304,7 +304,7 @@ overlay layer would be missing from both and break z-order.
   pinned down — likely the browser downloading/drawing never-seen images. Left
   open; revisit if it shows in real documents (a screen recording would help).
   Debug tooling: demo `?debug` posts a report to the dev server
-  (`<tmp>/simplemark-debug-report.json`).
+  (`<tmp>/simple-mark-debug-report.json`).
 - Dev server: changing dependencies while `npm run dev` runs can leave two
   copies of `@codemirror/view` loaded (keymaps silently ignored). Restart it,
   deleting `packages/codemirror/node_modules/.vite`.

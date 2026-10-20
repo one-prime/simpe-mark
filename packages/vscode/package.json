@@ -1,9 +1,9 @@
 {
-  "name": "simplemark",
+  "name": "simple-mark",
   "displayName": "SimpleMark",
   "description": "Edit Markdown with its formatting shown and none of its syntax hidden.",
   "version": "0.1.0",
-  "publisher": "simplemark",
+  "publisher": "simple-mark",
   "license": "MIT",
   "private": true,
   "type": "module",
@@ -25,7 +25,7 @@
   "contributes": {
     "customEditors": [
       {
-        "viewType": "simplemark.editor",
+        "viewType": "simple-mark.editor",
         "displayName": "SimpleMark",
         "selector": [
           { "filenamePattern": "*.md" },
@@ -36,13 +36,13 @@
     ],
     "commands": [
       {
-        "command": "simplemark.open",
+        "command": "simple-mark.open",
         "title": "Open with SimpleMark",
         "category": "SimpleMark",
         "icon": "$(preview)"
       },
       {
-        "command": "simplemark.openAsText",
+        "command": "simple-mark.openAsText",
         "title": "Open as Text",
         "category": "SimpleMark",
         "icon": "$(go-to-file)"
@@ -51,31 +51,31 @@
     "menus": {
       "editor/title": [
         {
-          "command": "simplemark.open",
-          "when": "resourceLangId == markdown && activeCustomEditorId != simplemark.editor",
+          "command": "simple-mark.open",
+          "when": "resourceLangId == markdown && activeCustomEditorId != 'simple-mark.editor'",
           "group": "navigation"
         },
         {
-          "command": "simplemark.openAsText",
-          "when": "activeCustomEditorId == simplemark.editor",
+          "command": "simple-mark.openAsText",
+          "when": "activeCustomEditorId == 'simple-mark.editor'",
           "group": "navigation"
         }
       ],
       "explorer/context": [
         {
-          "command": "simplemark.open",
+          "command": "simple-mark.open",
           "when": "resourceLangId == markdown",
           "group": "navigation"
         }
       ],
       "commandPalette": [
         {
-          "command": "simplemark.open",
-          "when": "resourceLangId == markdown && activeCustomEditorId != simplemark.editor"
+          "command": "simple-mark.open",
+          "when": "resourceLangId == markdown && activeCustomEditorId != 'simple-mark.editor'"
         },
         {
-          "command": "simplemark.openAsText",
-          "when": "activeCustomEditorId == simplemark.editor"
+          "command": "simple-mark.openAsText",
+          "when": "activeCustomEditorId == 'simple-mark.editor'"
         }
       ]
     }

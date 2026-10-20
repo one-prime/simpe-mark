@@ -7,7 +7,7 @@ import { makeNonce, webviewHtml } from './html';
 import type { HostMessage, LinkTarget, WebviewMessage } from './protocol';
 import { linkPath } from './sync';
 
-const VIEW_TYPE = 'simplemark.editor';
+const VIEW_TYPE = 'simple-mark.editor';
 
 export function activate(context: vscode.ExtensionContext): void {
   context.subscriptions.push(
@@ -15,11 +15,11 @@ export function activate(context: vscode.ExtensionContext): void {
       webviewOptions: { retainContextWhenHidden: true },
       supportsMultipleEditorsPerDocument: true,
     }),
-    vscode.commands.registerCommand('simplemark.open', (uri?: vscode.Uri) => {
+    vscode.commands.registerCommand('simple-mark.open', (uri?: vscode.Uri) => {
       const target = uri ?? vscode.window.activeTextEditor?.document.uri;
       if (target) void vscode.commands.executeCommand('vscode.openWith', target, VIEW_TYPE);
     }),
-    vscode.commands.registerCommand('simplemark.openAsText', (uri?: vscode.Uri) => {
+    vscode.commands.registerCommand('simple-mark.openAsText', (uri?: vscode.Uri) => {
       const target = uri ?? activeCustomEditorUri();
       if (target) void vscode.commands.executeCommand('vscode.openWith', target, 'default');
     }),

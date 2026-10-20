@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { defineConfig } from 'vite';
 
 // Demo server. POST /debug-report (sent by the demo's ?debug mode) is saved to
-// <tmp>/simplemark-debug-report.json, so a run in a real browser can be studied.
+// <tmp>/simple-mark-debug-report.json, so a run in a real browser can be studied.
 export default defineConfig({
   // MathJax font parts are imported on demand; prepare them at startup, so the dev server
   // never discovers them mid-session and serves a page an outdated chunk (504).
@@ -15,13 +15,13 @@ export default defineConfig({
   },
   plugins: [
     {
-      name: 'simplemark-debug-report',
+      name: 'simple-mark-debug-report',
       configureServer(server) {
         server.middlewares.use('/debug-report', (req, res) => {
           let body = '';
           req.on('data', (chunk: Buffer) => (body += chunk.toString()));
           req.on('end', () => {
-            const file = join(tmpdir(), 'simplemark-debug-report.json');
+            const file = join(tmpdir(), 'simple-mark-debug-report.json');
             writeFileSync(file, body);
             res.end(`saved to ${file}`);
           });
