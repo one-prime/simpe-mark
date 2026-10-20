@@ -44,6 +44,7 @@ export const defaultTheme: Theme = {
   block: {
     quote: { color: '#59636e', borderLeft: '#d1d9e0' },
     codeblock: { monospace: true, lineBackground: '#f6f8fa' },
+    mathblock: { monospace: true, color: '#6639ba' },
     table: { monospace: true },
     tableHeader: { fontWeight: 700 },
     tableRowAlt: { lineBackground: '#f6f8fa' },
@@ -61,6 +62,7 @@ export const defaultTheme: Theme = {
     em: { italic: true },
     strike: { strike: true },
     code: { monospace: true, background: 'rgba(129, 139, 152, 0.15)' },
+    math: { monospace: true, color: '#6639ba' },
     url: { color: '#8c959f', underline: true },
     mark: { color: '#8c959f', fontWeight: 400, italic: false, strike: false, underline: false },
   },

@@ -34,18 +34,27 @@ const answer = 42; // code blocks keep their fences
 
 ## Images
 
-![A cat](./images/cat.png "Our cat")
+![A sunset](./images/sunset.png "Sample PNG")
 
 A reference-style image ![logo][logo] in a sentence.
 
 [logo]: ./images/logo.svg
 
+A missing one: ![gone](./images/missing.png)
+
 ## Math
 
-Inline math like $E = mc^2$ and $a_i + b_i$ sits in the text.
+Inline math like $E = mc^2$ and $a_i * b_i * c_i$ sits in the text
+(put the cursor inside it). Prices like $5 and $10 stay text.
 
 $$
 \\sum_{i=1}^{n} x_i^2 = \\frac{n(n+1)(2n+1)}{6}
+$$
+
+$$ \\mathbb{R}^n \\to \\mathfrak{g} $$
+
+$$
+\\frac{1}{
 $$
 
 ---

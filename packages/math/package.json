@@ -1,0 +1,13 @@
+{
+  "name": "@simplemark/math",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "TeX to self-contained SVG with MathJax. Pure TypeScript, no DOM.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@mathjax/src": "4.1.3"
+  }
+}

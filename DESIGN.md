@@ -75,6 +75,7 @@ GFM (tables, task lists, strikethrough, autolinks) + math (`$…$`, `$$…$$`).
 packages/
   model/       pure TS, no DOM: Lezer parse (GFM + math) → styled runs/blocks,
                table auto-align. Shared by every renderer.
+  math/        pure TS, no DOM: TeX → self-contained SVG string (MathJax 4).
   codemirror/  CM6 editor + extensions, built on model
                createEditor(parent, { doc, onChange, resolveImage, theme, readOnly })
   vscode/      VS Code extension hosting the editor in a webview
@@ -122,8 +123,10 @@ overlay layer would be missing from both and break z-order.
    row: leaves the table), each re-aligning the table as one undo step; padding
    by display width; alternating rows; font-independent alignment of wide
    characters.
-3. Images and math: preview widgets below the source, inline math tooltip
-   (MathJax SVG).
+3. ✅ Images and math: `$…$` / `$$…$$` syntax (Pandoc rules) in `model`;
+   `packages/math` renders TeX to SVG (MathJax 4, no DOM); previews of images
+   and `$$` blocks below their lines, inline math in a tooltip (cursor inside or
+   hover); errors shown as text; hosts resolve image paths (`resolveImage`).
 4. VS Code extension.
 5. DrawLayout: `textFormat`, canvas drawing of `model` output, CM6 editing overlay.
 
@@ -144,6 +147,26 @@ overlay layer would be missing from both and break z-order.
 - GFM reads a text line directly below a table as another row, so leaving a
   table needs a blank line in between.
 - Lezer puts a quoted table's `>` markers inside the Table node, between rows.
+- Math syntax follows Pandoc: `$` opens only before a non-space, closes only
+  after a non-space and not before a digit (`$5 and $10` stays text); `\$` never
+  counts; a `$$` line ends a paragraph like a code fence. The block parser uses
+  Lezer's untyped `line.depth` (as Lezer's own fenced code does) to stop at the
+  end of a quote or list; tests cover it.
+- MathJax 4 notes: inline formulas are split into several `<svg>`s at `=` unless
+  `linebreaks: { inline: false }`; `TexError` is not an `Error` subclass; rare
+  glyph ranges load font parts on demand, so `packages/math/src/fonts.ts` maps
+  each of the 40 parts to a static `import()` (bundlers make lazy chunks of
+  them). The list matches font 4.1.3, so `@mathjax/src` is pinned to 4.1.3.
+- Untrusted documents: the TeX packages `html`, `texhtml`, `textmacros`,
+  `require` and `autoload` are left out (`\href`, `\style`, raw HTML, loading
+  code). Image previews load whatever URL a document names — hosts should limit
+  that (VS Code: webview CSP / `localResourceRoots`).
+- Bundle (demo build): editor 516 KB (176 KB gzip) without MathJax; MathJax and
+  its main font load on first math, 1.3 MB (468 KB gzip). Follow-up: the editor
+  chunk includes HTML/CSS/JS parsers that `@codemirror/lang-markdown` uses for
+  inline HTML; a lighter `htmlTagLanguage` could cut it.
+- Block previews are recomputed from the whole syntax tree on each change; fine
+  for normal documents, a candidate for incremental updates later.
 - Dev server: changing dependencies while `npm run dev` runs can leave two
   copies of `@codemirror/view` loaded (keymaps silently ignored). Restart it,
   deleting `packages/codemirror/node_modules/.vite`.

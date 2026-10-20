@@ -8,7 +8,7 @@
   ],
   "scripts": {
     "dev": "npm run dev -w @simplemark/codemirror",
-    "typecheck": "tsc -p packages/model/tsconfig.json && tsc -p tsconfig.json && tsc -p tsconfig.test.json",
+    "typecheck": "tsc -p packages/model/tsconfig.json && tsc -p packages/math/tsconfig.json && tsc -p tsconfig.json && tsc -p tsconfig.test.json",
     "test": "vitest run"
   },
   "devDependencies": {

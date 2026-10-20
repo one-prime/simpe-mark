@@ -5,11 +5,11 @@
 import type { SyntaxNode, SyntaxNodeRef, Tree } from '@lezer/common';
 
 /** Styles of whole lines, in precedence order (later wins when two set the same property). */
-export const BLOCK_STYLES = ['quote', 'codeblock', 'table', 'tableHeader', 'tableRowAlt', 'hr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const;
+export const BLOCK_STYLES = ['quote', 'codeblock', 'mathblock', 'table', 'tableHeader', 'tableRowAlt', 'hr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const;
 export type BlockStyle = (typeof BLOCK_STYLES)[number];
 
 /** Styles of text ranges, in precedence order ("mark" last, so markers stay dimmed everywhere). */
-export const INLINE_STYLES = ['link', 'strong', 'em', 'strike', 'code', 'url', 'mark'] as const;
+export const INLINE_STYLES = ['link', 'strong', 'em', 'strike', 'code', 'math', 'url', 'mark'] as const;
 export type InlineStyle = (typeof INLINE_STYLES)[number];
 
 /** A block construct; every line it touches gets `style`. Blocks may nest (a heading in a quote). */
@@ -43,6 +43,7 @@ const BLOCK_NODES: Record<string, BlockStyle> = {
   SetextHeading2: 'h2',
   FencedCode: 'codeblock',
   CodeBlock: 'codeblock',
+  BlockMath: 'mathblock',
   Blockquote: 'quote',
   HorizontalRule: 'hr',
   Table: 'table',
@@ -54,6 +55,7 @@ const INLINE_NODES: Record<string, InlineStyle> = {
   Emphasis: 'em',
   Strikethrough: 'strike',
   InlineCode: 'code',
+  InlineMath: 'math',
   Link: 'link',
   Image: 'link',
   Autolink: 'link',
@@ -70,6 +72,7 @@ const INLINE_NODES: Record<string, InlineStyle> = {
   TaskMarker: 'mark',
   TableDelimiter: 'mark',
   HorizontalRule: 'mark',
+  MathMark: 'mark',
 };
 
 /** Where a URL is the target of a link (dimmed) rather than the visible text (a bare autolink). */
