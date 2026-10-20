@@ -1,0 +1,14 @@
+{
+  "name": "@simplemark/model",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Markdown parsing and styling model shared by every renderer. Pure TypeScript, no DOM.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@lezer/common": "^1.5.3",
+    "@lezer/markdown": "^1.8.1"
+  }
+}

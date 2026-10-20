@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SimpleMark demo</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body { margin: 0; background: #eef0f2; font-family: system-ui, sans-serif; }
+      main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; height: calc(100vh - 32px); box-sizing: border-box; }
+      section { display: flex; flex-direction: column; min-height: 0; }
+      h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: #59636e; }
+      #editor { flex: 1; min-height: 0; background: #fff; border: 1px solid #d1d9e0; border-radius: 6px; overflow: hidden; }
+      #editor .cm-editor { height: 100%; font-size: 15px; }
+      #editor .cm-content { padding: 16px 20px; }
+      #editor .cm-editor.cm-focused { outline: none; }
+      #source { flex: 1; margin: 0; padding: 16px; overflow: auto; background: #fff; border: 1px solid #d1d9e0; border-radius: 6px; font: 13px/1.5 ui-monospace, monospace; white-space: pre-wrap; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section>
+        <h2>Editor</h2>
+        <div id="editor"></div>
+      </section>
+      <section>
+        <h2>Saved text (exactly what goes to disk)</h2>
+        <pre id="source"></pre>
+      </section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

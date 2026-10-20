@@ -1,0 +1,57 @@
+import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
+import { commonmarkLanguage, markdown } from '@codemirror/lang-markdown';
+import { EditorState, type Extension } from '@codemirror/state';
+import { EditorView, keymap, type ViewUpdate } from '@codemirror/view';
+import { defaultTheme, markdownExtensions, type Theme } from '@simplemark/model';
+import { markdownDecorations, markdownTheme } from './decorations';
+import { keepLineSeparator } from './line-separator';
+
+export { lookCss, markdownDecorations, markdownTheme } from './decorations';
+export { keepLineSeparator } from './line-separator';
+
+/** The SimpleMark language and styling, for hosts that build their own EditorState. */
+export function simpleMark(theme: Theme = defaultTheme): Extension {
+  return [
+    markdown({ base: commonmarkLanguage, extensions: markdownExtensions, completeHTMLTags: false }),
+    markdownTheme.of(theme),
+    markdownDecorations,
+    EditorView.theme({
+      '&': { color: theme.color },
+      '.cm-scroller': { fontFamily: theme.fontFamily, lineHeight: '1.6' },
+    }),
+  ];
+}
+
+export interface EditorOptions {
+  doc?: string;
+  readOnly?: boolean;
+  theme?: Theme;
+  /** Off when the host owns undo (VS Code). */
+  history?: boolean;
+  /** Called after every change with the full text, in the original line endings. */
+  onChange?: (text: string, update: ViewUpdate) => void;
+  extensions?: Extension[];
+}
+
+/** A Markdown editor in `parent`. The text is kept exactly as given, line endings included. */
+export function createEditor(parent: HTMLElement, options: EditorOptions = {}): EditorView {
+  const { doc = '', readOnly = false, theme = defaultTheme, onChange, extensions = [] } = options;
+  const useHistory = options.history ?? true;
+  return new EditorView({
+    parent,
+    state: EditorState.create({
+      doc,
+      extensions: [
+        keepLineSeparator(doc),
+        useHistory ? history() : [],
+        keymap.of([...defaultKeymap, ...(useHistory ? historyKeymap : [])]),
+        EditorView.lineWrapping,
+        simpleMark(theme),
+        EditorState.readOnly.of(readOnly),
+        EditorView.editable.of(!readOnly),
+        onChange ? EditorView.updateListener.of((update) => update.docChanged && onChange(update.state.sliceDoc(), update)) : [],
+        extensions,
+      ],
+    }),
+  });
+}

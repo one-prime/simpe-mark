@@ -1,0 +1,21 @@
+{
+  "name": "@simplemark/codemirror",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "CodeMirror 6 editor that styles Markdown without hiding its syntax.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "vite demo --port 5180 --strictPort"
+  },
+  "dependencies": {
+    "@codemirror/commands": "^6.11.1",
+    "@codemirror/lang-markdown": "^6.5.2",
+    "@codemirror/language": "^6.13.1",
+    "@codemirror/state": "^6.7.6",
+    "@codemirror/view": "^6.43.15",
+    "@simplemark/model": "*"
+  }
+}
