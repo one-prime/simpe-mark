@@ -23,13 +23,19 @@ let pending = 0;
 /** An update arrived while edits were pending; ask for the text once they are applied. */
 let stale = false;
 
-/** Image paths relative to the document's folder; web images as they are; other schemes refused. */
-function imageResolver(baseUri: string | null) {
-  return (src: string): string | null => {
+/**
+ * Image paths relative to the document's folder. A path starting with "/" is an absolute path
+ * on disk, or else relative to the workspace folder (as VS Code's Markdown preview reads it):
+ * both are tried, like when the link is opened. Web images as they are; other schemes refused.
+ */
+function imageResolver(baseUri: string | null, workspaceUri: string | null) {
+  return (src: string): string | string[] | null => {
     if (/^(https?:|data:image\/)/i.test(src)) return src;
     if (/^[a-z][a-z0-9+.-]*:/i.test(src) || !baseUri) return null;
     try {
-      return new URL(src, baseUri).toString();
+      const resolved = new URL(src, baseUri).toString();
+      if (src.startsWith('/') && workspaceUri) return [resolved, new URL(src.slice(1), workspaceUri).toString()];
+      return resolved;
     } catch {
       return null;
     }
@@ -63,7 +69,9 @@ function start(message: Extract<HostMessage, { type: 'init' }>): void {
     readOnly: message.readOnly,
     theme: vscodeTheme,
     history: false, // VS Code owns undo/redo for the document
-    resolveImage: imageResolver(message.baseUri),
+    resolveImage: imageResolver(message.baseUri, message.workspaceUri),
+    // VS Code opens links: web pages outside, files in its own editors.
+    openLink: (target) => post({ type: 'openLink', target }),
     extensions: [vscodeChrome, sendEdits],
   });
   view.focus();

@@ -6,6 +6,7 @@
 import { syntaxTree } from '@codemirror/language';
 import { Facet, type EditorState, type Line, type Range } from '@codemirror/state';
 import { Decoration, ViewPlugin, type DecorationSet, type EditorView, type ViewUpdate } from '@codemirror/view';
+import { followKeyName } from './links';
 import { charWidth, defaultTheme, markdownStyles, resolveLineLook, resolveLook, type BlockStyle, type InlineStyle, type LineLook, type Theme } from '@simple-mark/model';
 
 /** The theme the editor draws with. */
@@ -173,9 +174,13 @@ class MarkdownDecorations {
     let deco = this.cache.get(key);
     if (!deco) {
       // Line properties come from the line decoration; spans only set what they change.
+      const linked = styles.includes('link') || styles.includes('url');
       deco = Decoration.mark({
         class: styles.map((s) => `sm-${s}`).join(' '),
-        attributes: { style: lookCss(resolveLook([], styles, this.theme), this.theme) },
+        attributes: {
+          style: lookCss(resolveLook([], styles, this.theme), this.theme),
+          ...(linked ? { title: `${followKeyName}+Click to open` } : {}),
+        },
       });
       this.cache.set(key, deco);
     }

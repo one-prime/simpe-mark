@@ -11,6 +11,7 @@ const view = createEditor(document.getElementById('editor')!, {
   doc: '# Hello **world**\n\n| a | b |\n|---|---|\n| 1 | 2 |\n',
   onChange: (text) => save(text),        // in the document's own line endings
   resolveImage: (src) => new URL(src, base).href,
+  openLink: (target) => open(target),     // { kind: 'web' | 'file' | 'image', url }
 });
 ```
 
@@ -19,6 +20,10 @@ const view = createEditor(document.getElementById('editor')!, {
   them with an IME is safe.
 - **Images** and `$$` math preview below their source; `$inline$` math in a tooltip. Math
   (`@simple-mark/math`) loads only when a document has math.
+- **Links**: Ctrl+Click (⌘+Click on macOS) follows a link — a plain click keeps placing the
+  cursor, since links are editable text. `#heading` links jump within the document; other
+  schemes than http(s)/mailto are refused; web pages and paths go to `openLink` (default: a
+  new browser tab). A click on an image preview opens the image.
 - **Line endings** are kept (`\r\n`, `\r`), so an unedited file saves back byte for byte.
 - Accurate scroll heights for documents with many images and formulas.
 - `simpleMark(theme)` gives the extensions for your own `EditorState`.

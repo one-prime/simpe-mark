@@ -1,4 +1,5 @@
 export { markdownExtensions, markdownParser } from './parser';
+export { headingAnchors, headingSlug, linkAt, linkKind, type LinkAt } from './links';
 export { mathSource, previewBlocks, type ImageSource, type PreviewBlock } from './previews';
 export {
   BLOCK_STYLES,

@@ -49,6 +49,15 @@ const server = createServer((req, res) => {
 await new Promise((resolve) => server.listen(0, '127.0.0.1', resolve));
 const origin = `http://127.0.0.1:${server.address().port}`;
 
+const eventually = async (read, ok, ms = 3000) => {
+  const end = Date.now() + ms;
+  for (;;) {
+    const value = await read();
+    if (ok(value) || Date.now() > end) return ok(value);
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+};
+
 const failures = [];
 const check = (ok, message) => {
   console.log(`  ${ok ? '✓' : '✗'} ${message}`);
@@ -60,6 +69,10 @@ const page = await browser.newPage();
 const errors = [];
 page.on('pageerror', (e) => errors.push(String(e)));
 page.on('console', (m) => m.type() === 'error' && errors.push(m.text()));
+// Requests that are expected to fail: an image's first place to try (see the "/" fallback check).
+const expectedMissing = new Set(['/sunset.png']);
+let expected404s = 0;
+page.on('response', (r) => r.status() === 404 && expectedMissing.has(new URL(r.url()).pathname) && expected404s++);
 
 const toHost = () => page.evaluate(() => window.toHost.splice(0));
 const fromHost = (message) => page.evaluate((m) => window.postMessage(m, '*'), message);
@@ -70,8 +83,9 @@ try {
   check(true, 'webview loads under the CSP and says ready');
   await toHost();
 
-  const text = '# Title\r\n\r\n| a | b |\r\n|---|---|\r\n| 1 | 2 |\r\n\r\n![sunset](sunset.png)\r\n\r\n$$\r\n\\mathbb{R}^n\r\n$$\r\n';
-  await fromHost({ type: 'init', text, eol: '\r\n', baseUri: `${origin}/docs/`, readOnly: false });
+  const text = '# Title\r\n\r\n| a | b |\r\n|---|---|\r\n| 1 | 2 |\r\n\r\n![sunset](sunset.png)\r\n\r\n$$\r\n\\mathbb{R}^n\r\n$$\r\n\r\nSee [the docs](https://example.com/docs) and [notes](notes/b.md).\r\n\r\n![from the workspace](/sunset.png)\r\n';
+  // The document's folder and the workspace folder (here both /docs/).
+  await fromHost({ type: 'init', text, eol: '\r\n', baseUri: `${origin}/docs/`, workspaceUri: `${origin}/docs/`, readOnly: false });
   await page.waitForSelector('.cm-content');
   await page.waitForFunction(() => document.querySelector('.sm-math-preview svg'), null, { timeout: 15000 });
   check(true, 'math renders under the CSP (lazy MathJax chunk and font part)');
@@ -112,9 +126,32 @@ try {
   await page.waitForTimeout(50);
   check((await toHost()).some((m) => m.type === 'requestText'), 'after the ack it asks for the text again');
 
+  // "/sunset.png" is not an absolute path on disk here, so it loads from the workspace folder.
+  check(
+    await eventually(() => page.evaluate(() => [...document.querySelectorAll('.sm-image-preview img')].find((i) => i.alt === 'from the workspace')?.naturalWidth ?? 0), (w) => w > 0),
+    'an image path starting with "/" falls back to the workspace folder',
+  );
+
+  // Links go to the host, which opens them the VS Code way.
+  await toHost();
+  await page.locator('.sm-link', { hasText: 'the docs' }).click({ modifiers: ['Control'] });
+  await page.locator('.sm-link', { hasText: 'notes' }).first().click({ modifiers: ['Control'] });
+  await page.locator('.sm-image-preview img').first().click();
+  await page.locator('.sm-link', { hasText: 'the docs' }).click(); // a plain click only places the cursor
+  const opened = (await toHost()).filter((m) => m.type === 'openLink').map((m) => m.target);
+  const expected = [
+    { kind: 'web', url: 'https://example.com/docs' },
+    { kind: 'file', url: 'notes/b.md' },
+    { kind: 'image', url: 'sunset.png' },
+  ];
+  check(JSON.stringify(opened) === JSON.stringify(expected), `Ctrl+Click on links and a click on an image preview ask the host to open them (${JSON.stringify(opened)})`);
+
   const violations = await page.evaluate(() => window.cspViolations);
   check(violations.length === 0, `no CSP violations ${violations.length ? JSON.stringify(violations) : ''}`);
-  check(errors.length === 0, `no console errors ${errors.length ? JSON.stringify(errors) : ''}`);
+  // The browser logs each failed request; the expected ones (first places to try) don't count.
+  let allowed = expected404s;
+  const unexpected = errors.filter((e) => !(e.startsWith('Failed to load resource') && e.includes('404') && allowed-- > 0));
+  check(unexpected.length === 0, `no console errors ${unexpected.length ? JSON.stringify(unexpected) : ''}`);
 } finally {
   await browser.close();
   server.close();

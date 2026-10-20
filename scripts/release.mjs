@@ -48,7 +48,7 @@ for (const name of PACKAGES) {
     dts: true,
     clean: true,
     // Everything the package depends on stays an import; only its own code is bundled.
-    external: Object.keys(dependencies).map((dep) => new RegExp(`^${dep}(/|$)`)),
+    deps: { neverBundle: Object.keys(dependencies).map((dep) => new RegExp(`^${dep}(/|$)`)) },
     logLevel: 'warn',
   });
 

@@ -36,3 +36,20 @@ export function offsetToLineCh(text: string, offset: number, eol: string): LineC
   }
   return { line, ch: offset - lineStart };
 }
+
+/**
+ * Where a followed link's path points: a Windows drive path; a path starting with "/" (an
+ * absolute path on disk if that file exists, else relative to the workspace folder); or the
+ * document's folder. Query and fragment are dropped, %-escapes decoded.
+ */
+export function linkPath(url: string): { path: string; base: 'drive' | 'root' | 'document' } | null {
+  let path = url.split(/[?#]/)[0] ?? '';
+  try {
+    path = decodeURIComponent(path);
+  } catch {
+    // Not %-encoded: use as written.
+  }
+  if (!path) return null;
+  if (/^[a-zA-Z]:[\\/]/.test(path)) return { path, base: 'drive' };
+  return { path, base: path.startsWith('/') ? 'root' : 'document' };
+}

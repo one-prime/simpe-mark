@@ -15,13 +15,14 @@ export interface ImageSource {
 /** A preview drawn below the line that ends at `at` (an offset in the text). */
 export type PreviewBlock = { at: number; images: ImageSource[] } | { at: number; tex: string };
 
-const normalizeLabel = (label: string) => label.slice(1, -1).trim().replace(/\s+/g, ' ').toLowerCase();
+/** A reference label (`[Logo]`) as definitions are looked up: case and spacing ignored. */
+export const normalizeLabel = (label: string) => label.slice(1, -1).trim().replace(/\s+/g, ' ').toLowerCase();
 
 /** A link destination as written, without the optional angle brackets (`<a b.png>`). */
-const destination = (text: string, url: SyntaxNode) => text.slice(url.from, url.to).replace(/^<(.*)>$/, '$1');
+export const destination = (text: string, url: SyntaxNode) => text.slice(url.from, url.to).replace(/^<(.*)>$/, '$1');
 
 /** Link reference definitions (`[label]: url`) of the document, by normalized label. */
-function linkDefinitions(tree: Tree, text: string): Map<string, string> {
+export function linkDefinitions(tree: Tree, text: string): Map<string, string> {
   const definitions = new Map<string, string>();
   for (let node = tree.topNode.firstChild; node; node = node.nextSibling) {
     if (node.name !== 'LinkReference') continue;

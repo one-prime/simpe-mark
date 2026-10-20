@@ -4,12 +4,14 @@
 // not drawn yet are estimated in preview-heights.ts.
 
 import { syntaxTree } from '@codemirror/language';
-import { Facet, StateField, type EditorState, type Extension, type Range } from '@codemirror/state';
+import { StateField, type EditorState, type Extension, type Range } from '@codemirror/state';
 import { Decoration, EditorView, WidgetType, hoverTooltip, showTooltip, type DecorationSet, type Tooltip } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
 import type { MathResult } from '@simple-mark/math';
 import { mathSource, previewBlocks, type ImageSource } from '@simple-mark/model';
+import { imageResolver, resolvedUrls, type ImageResolver } from './image-resolver';
 import { lineHeightHints } from './line-heights';
+import { followLink } from './links';
 import { loadMath, loadedMath } from './math-loader';
 import {
   PREVIEW_PADDING,
@@ -24,11 +26,7 @@ import {
   whenImageSized,
 } from './preview-heights';
 
-/** Turns an image path as written in the document into a URL to load, or null if it can't. */
-export type ImageResolver = (src: string) => string | null;
-
-/** How image paths are resolved; by default they are used as written. */
-export const imageResolver = Facet.define<ImageResolver, ImageResolver>({ combine: (values) => values[0] ?? ((src) => src) });
+export { imageResolver, type ImageResolver } from './image-resolver';
 
 // ---- math --------------------------------------------------------------------------------------
 
@@ -97,6 +95,8 @@ export interface ImageRef {
   raw: string;
   /** URL to load, or null when it can't be resolved. */
   src: string | null;
+  /** More URLs to try in order when `src` doesn't load. */
+  fallbacks?: string[];
   alt: string;
   problem?: string;
 }
@@ -104,8 +104,9 @@ export interface ImageRef {
 /** An image from the document with its path resolved by the host. */
 function imageRef(image: ImageSource, resolve: ImageResolver): ImageRef {
   if (image.src === null) return { raw: image.raw, src: null, alt: image.alt, problem: `No definition for ${image.raw}` };
-  const src = resolve(image.src);
-  return src === null ? { raw: image.raw, src, alt: image.alt, problem: `Can't load ${image.raw}` } : { raw: image.raw, src, alt: image.alt };
+  const [src, ...fallbacks] = resolvedUrls(resolve, image.src);
+  if (src === undefined) return { raw: image.raw, src: null, alt: image.alt, problem: `Can't load ${image.raw}` };
+  return { raw: image.raw, src, ...(fallbacks.length ? { fallbacks } : {}), alt: image.alt };
 }
 
 class ImageWidget extends WidgetType {
@@ -171,9 +172,18 @@ class ImageWidget extends WidgetType {
       img.decoding = 'async';
       img.src = image.src;
       img.alt = image.alt;
-      img.title = image.raw;
+      img.title = `${image.raw} (click to open)`;
+      img.addEventListener('click', () => followLink(view, image.raw, true));
       img.onload = settled;
+      const fallbacks = [...(image.fallbacks ?? [])];
       img.onerror = () => {
+        const next = fallbacks.shift();
+        if (next !== undefined) {
+          // Not at the first place it could be: try the next.
+          watchImage(img, next);
+          img.src = next;
+          return;
+        }
         img.replaceWith(problem(`Image not found: ${image.raw}`));
         settled();
       };

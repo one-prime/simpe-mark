@@ -100,6 +100,25 @@ MathJax's own types, which fail strict checks, into users' type checking. Checke
 installing the three `.tgz` files into an empty project (TypeScript 5 strict with library
 checks, Vite build, browser run with lazy math). npm publishing needs 2FA on the account.
 
+### Links
+
+Ctrl+Click (⌘+Click on macOS) follows a link; a plain click places the cursor, because link
+text is editable (VS Code's convention). While the key is held, links show a pointer and an
+underline; their title says how to open them. A click on an image preview opens the image.
+`model` finds the link at a position (`linkAt`: links, images, reference links, autolinks,
+bare URLs, definition URLs) and classifies its target (`linkKind`): `web` (http(s), mailto,
+`www.`, e-mail), `anchor` (`#heading`, GitHub-style slugs from `headingAnchors`, Korean
+kept), `file` (paths), `unsafe` (any other scheme — refused). The editor jumps to anchors
+itself and hands the rest to the host's `openLink`: the browser default opens a new tab
+(paths resolved like images); VS Code opens web pages with `openExternal` and paths with
+`vscode.open` relative to the document, so images open in its image viewer and `.md` files in
+SimpleMark. DrawLayout will choose its own behavior.
+
+A path starting with `/` is an absolute path on disk if that file exists, else relative to the
+workspace folder (VS Code's Markdown preview convention) — for drawing and for opening alike.
+So an `ImageResolver` may return several URLs to try in order; a preview moves to the next one
+when an image fails to load (the first failure shows up as one 404 in the console).
+
 ### Canvas: `@simple-mark/canvas`
 
 `layoutMarkdown(text, options)` (no DOM; widths from the host's `measure`) turns text into

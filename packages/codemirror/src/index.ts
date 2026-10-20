@@ -5,11 +5,13 @@ import { EditorView, keymap, type ViewUpdate } from '@codemirror/view';
 import { defaultTheme, markdownExtensions, type Theme } from '@simple-mark/model';
 import { markdownDecorations, markdownTheme } from './decorations';
 import { keepLineSeparator } from './line-separator';
+import { linkOpener, links, type LinkOpener } from './links';
 import { imageResolver, previews, type ImageResolver } from './previews';
 import { tableEditing } from './table-commands';
 
 export { lookCss, markdownDecorations, markdownTheme } from './decorations';
 export { keepLineSeparator } from './line-separator';
+export { followLink, linkOpener, links, type LinkOpener, type LinkTarget } from './links';
 export { imageResolver, previews, type ImageResolver } from './previews';
 export { insertRowBelow, nextCell, previousCell, tableEditing } from './table-commands';
 
@@ -22,6 +24,7 @@ export function simpleMark(theme: Theme = defaultTheme): Extension {
     markdownTheme.of(theme),
     markdownDecorations,
     previews(),
+    links(),
     EditorView.theme({
       '&': { color: theme.color },
       '.cm-scroller': { fontFamily: theme.fontFamily, lineHeight: '1.6' },
@@ -37,6 +40,11 @@ export interface EditorOptions {
   lineSeparator?: string;
   /** Turns an image path from the document into a URL to load (default: as written). */
   resolveImage?: ImageResolver;
+  /**
+   * Opens a followed link (Ctrl/Cmd+Click) or a clicked image preview. Default: web addresses
+   * and paths (resolved like images) in a new browser tab.
+   */
+  openLink?: LinkOpener;
   /** Off when the host owns undo (VS Code). */
   history?: boolean;
   /** Called after every change with the full text, in the original line endings. */
@@ -46,7 +54,7 @@ export interface EditorOptions {
 
 /** A Markdown editor in `parent`. The text is kept exactly as given, line endings included. */
 export function createEditor(parent: HTMLElement, options: EditorOptions = {}): EditorView {
-  const { doc = '', readOnly = false, theme = defaultTheme, resolveImage, onChange, extensions = [] } = options;
+  const { doc = '', readOnly = false, theme = defaultTheme, resolveImage, openLink, onChange, extensions = [] } = options;
   const useHistory = options.history ?? true;
   return new EditorView({
     parent,
@@ -59,6 +67,7 @@ export function createEditor(parent: HTMLElement, options: EditorOptions = {}): 
         EditorView.lineWrapping,
         simpleMark(theme),
         resolveImage ? imageResolver.of(resolveImage) : [],
+        openLink ? linkOpener.of(openLink) : [],
         EditorState.readOnly.of(readOnly),
         EditorView.editable.of(!readOnly),
         onChange ? EditorView.updateListener.of((update) => update.docChanged && onChange(update.state.sliceDoc(), update)) : [],

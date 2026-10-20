@@ -12,7 +12,14 @@ its `**`. The file on disk is exactly what you typed, byte for byte.
   table. Korean and other wide characters line up.
 - **Math**: `$inline$` shows a rendered tooltip, `$$` blocks render below their source
   (MathJax).
-- **Images** preview below their line; paths are relative to the document.
+- **Images** preview below their line; paths are relative to the document (see Links for
+  paths starting with `/`).
+- **Links**: Ctrl+Click (⌘+Click on macOS) opens a link: web pages in your browser (VS Code
+  asks first), `#heading` links jump within the document, and paths open in VS Code — images
+  in its image viewer, Markdown files in SimpleMark. Paths are relative to the document. A
+  path starting with `/` is an absolute path on disk, or else relative to the workspace folder
+  (as in VS Code's own Markdown preview); images are found the same way. Click an image
+  preview to open the image.
 - Follows your color theme. Saving, undo/redo and git work as with any text editor.
 
 ## Usage

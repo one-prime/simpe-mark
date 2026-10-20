@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { diffText, offsetToLineCh } from '../src/sync';
+import { diffText, linkPath, offsetToLineCh } from '../src/sync';
 
 const apply = (text: string, d: ReturnType<typeof diffText>) => (d ? text.slice(0, d.from) + d.insert + text.slice(d.to) : text);
 
@@ -40,5 +40,18 @@ describe('offsetToLineCh', () => {
     expect(offsetToLineCh(text, 4, '\r\n')).toEqual({ line: 1, ch: 0 });
     expect(offsetToLineCh(text, 10, '\r\n')).toEqual({ line: 2, ch: 2 });
     expect(offsetToLineCh('a\nb', 2, '\n')).toEqual({ line: 1, ch: 0 });
+  });
+});
+
+describe('linkPath', () => {
+  it('resolves against the document, the disk or workspace (leading /), or a drive', () => {
+    expect(linkPath('img/map.png')).toEqual({ path: 'img/map.png', base: 'document' });
+    expect(linkPath('../notes/b.md#part')).toEqual({ path: '../notes/b.md', base: 'document' });
+    expect(linkPath('my%20file.md?x=1')).toEqual({ path: 'my file.md', base: 'document' });
+    expect(linkPath('/assets/a.png')).toEqual({ path: '/assets/a.png', base: 'root' });
+    expect(linkPath('/home/jin/pics/a%20b.png')).toEqual({ path: '/home/jin/pics/a b.png', base: 'root' });
+    expect(linkPath('C:\\notes\\b.md')).toEqual({ path: 'C:\\notes\\b.md', base: 'drive' });
+    expect(linkPath('100%.md')).toEqual({ path: '100%.md', base: 'document' });
+    expect(linkPath('#only-a-fragment')).toBeNull();
   });
 });

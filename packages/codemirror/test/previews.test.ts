@@ -42,7 +42,18 @@ describe('image previews', () => {
       images: [{ src: 'vscode-resource:/docs/img/a.png' }, { src: null, problem: "Can't load https://x.y/b.png" }],
     });
   });
+  it('keeps further places to try when the host gives several', () => {
+    const resolve = (src: string) => (src.startsWith('/') ? [`disk:${src}`, `workspace:${src}`] : src);
+    expect(sources('![a](/img/a.png) ![b](b.png)', resolve)[0]).toMatchObject({
+      images: [
+        { src: 'disk:/img/a.png', fallbacks: ['workspace:/img/a.png'] },
+        { src: 'b.png', alt: 'b' },
+      ],
+    });
+  });
 });
+
+
 
 describe('math previews', () => {
   it('previews closed $$ blocks below their closing line', () => {
