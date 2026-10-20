@@ -27,7 +27,15 @@ const show = (text: string) => (source.textContent = text);
 const mono = params.get('mono');
 const theme = mono ? { ...defaultTheme, monospaceFamily: mono } : defaultTheme;
 
-const view = createEditor(document.getElementById('editor')!, { doc, theme, onChange: show });
+declare const __REPO_ROOT__: string;
+
+/**
+ * Paths starting with "/" as VS Code reads them: an absolute path on disk, else from the
+ * workspace folder (here the repository). Vite's dev server serves files from disk under /@fs/.
+ */
+const resolveImage = (src: string) => (src.startsWith('/') && !src.startsWith('//') ? [`/@fs${src}`, `/@fs${__REPO_ROOT__}${src}`] : src);
+
+const view = createEditor(document.getElementById('editor')!, { doc, theme, resolveImage, onChange: show });
 // For poking at the editor from the console or browser tests.
 Object.assign(window, { view });
 if (params.has('debug')) recordScrolling(view);

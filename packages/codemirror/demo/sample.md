@@ -67,9 +67,10 @@ Ctrl+Click (⌘+Click on a Mac) each link; click an image preview to open the im
 
 Paths starting with `/`: an absolute path on disk if that file exists, else from the
 workspace folder. The first image only exists on this machine; the second needs the
-SimpleMark repository open as the VS Code workspace. (The browser demo can't load either.)
+SimpleMark repository open as the VS Code workspace. (The browser demo reads both from
+disk through its dev server.)
 
-![Absolute path](/home/jin/Downloads/Sandbox/SimpleMark/packages/codemirror/demo/images/sunset.png)
+![Absolute path](/home/jin/Downloads/Sandbox/simple-mark/packages/codemirror/demo/images/sunset.png)
 
 ![From the workspace folder](/packages/codemirror/demo/images/logo.svg)
 
