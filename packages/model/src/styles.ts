@@ -5,7 +5,7 @@
 import type { SyntaxNode, SyntaxNodeRef, Tree } from '@lezer/common';
 
 /** Styles of whole lines, in precedence order (later wins when two set the same property). */
-export const BLOCK_STYLES = ['quote', 'codeblock', 'table', 'tableHeader', 'hr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const;
+export const BLOCK_STYLES = ['quote', 'codeblock', 'table', 'tableHeader', 'tableRowAlt', 'hr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const;
 export type BlockStyle = (typeof BLOCK_STYLES)[number];
 
 /** Styles of text ranges, in precedence order ("mark" last, so markers stay dimmed everywhere). */
@@ -99,12 +99,16 @@ export function markdownStyles(tree: Tree, from = 0, to = tree.length): Markdown
   to = Math.max(to, topLevelBlock(tree, to, -1)?.to ?? to);
   const blocks: BlockRange[] = [];
   const inline: { from: number; to: number; style: InlineStyle }[] = [];
+  // Body rows of the current table; whole top-level blocks are walked, so no row is skipped.
+  let tableRows = 0;
   tree.iterate({
     from,
     to,
     enter(node) {
       const block = BLOCK_NODES[node.name];
       if (block) blocks.push({ from: node.from, to: node.to, style: block });
+      if (node.name === 'Table') tableRows = 0;
+      if (node.name === 'TableRow' && ++tableRows % 2 === 0) blocks.push({ from: node.from, to: node.to, style: 'tableRowAlt' });
       // An escape is "\" plus the escaped character; only the backslash is syntax.
       if (node.name === 'Escape') {
         inline.push({ from: node.from, to: node.from + 1, style: 'mark' });

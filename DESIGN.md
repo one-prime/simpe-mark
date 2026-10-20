@@ -118,7 +118,10 @@ overlay layer would be missing from both and break z-order.
 1. ✅ `model` (parse → block ranges + flat styled spans, theme, look resolution)
    and `codemirror` (decorations, line-ending preservation) with a demo page
    (`npm run dev` → http://localhost:5180).
-2. Tables: Tab/Enter auto-align with display-width padding; alternating rows.
+2. ✅ Tables: Tab / Shift-Tab between cells, Enter adds a row (on an empty last
+   row: leaves the table), each re-aligning the table as one undo step; padding
+   by display width; alternating rows; font-independent alignment of wide
+   characters.
 3. Images and math: preview widgets below the source, inline math tooltip
    (MathJax SVG).
 4. VS Code extension.
@@ -128,8 +131,19 @@ overlay layer would be missing from both and break z-order.
 
 - CodeMirror joins lines with `\n` in `doc.toString()` even with a `\r\n`
   separator; always read text back with `state.sliceDoc()`.
-- Monospace tables with Korean only line up when one font draws both Latin and
-  Hangul at a 1:2 width (D2Coding, Noto Sans Mono CJK KR); a Latin-only font
-  plus a CJK fallback does not. The theme lists those fonts first. On machines
-  without them, tables misalign — milestone 2 must handle this (e.g. sizing cells
-  by measured width instead of trusting the font).
+- Fonts can't be trusted to draw CJK exactly two columns wide: a Latin-only
+  monospace font falls back to a CJK font of another width, and even Noto Sans
+  Mono CJK KR draws Hangul syllables 0.92 em (ideographs and kana 1.0 em). The
+  editor measures the theme's monospace font once; if CJK doesn't fit two
+  columns, runs of wide characters in table lines are drawn as inline boxes of
+  exactly `2ch` per character. Checked in Chromium and Firefox with the default
+  font and with DejaVu Sans Mono (Latin-only): pipes line up within 0.1 px.
+  Korean IME composition inside those boxes was checked with Chromium's IME
+  emulation, not yet with a real IME. The canvas renderer should do the same:
+  draw each wide character centered in two columns.
+- GFM reads a text line directly below a table as another row, so leaving a
+  table needs a blank line in between.
+- Lezer puts a quoted table's `>` markers inside the Table node, between rows.
+- Dev server: changing dependencies while `npm run dev` runs can leave two
+  copies of `@codemirror/view` loaded (keymaps silently ignored). Restart it,
+  deleting `packages/codemirror/node_modules/.vite`.

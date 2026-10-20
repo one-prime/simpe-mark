@@ -4,9 +4,9 @@
 // are added as well, for host CSS and tests.
 
 import { syntaxTree } from '@codemirror/language';
-import { Facet, type Range } from '@codemirror/state';
+import { Facet, type Line, type Range } from '@codemirror/state';
 import { Decoration, ViewPlugin, type DecorationSet, type EditorView, type ViewUpdate } from '@codemirror/view';
-import { defaultTheme, markdownStyles, resolveLineLook, resolveLook, type BlockStyle, type InlineStyle, type LineLook, type Theme } from '@simplemark/model';
+import { charWidth, defaultTheme, markdownStyles, resolveLineLook, resolveLook, type BlockStyle, type InlineStyle, type LineLook, type Theme } from '@simplemark/model';
 
 /** The theme the editor draws with. */
 export const markdownTheme = Facet.define<Theme, Theme>({ combine: (values) => values[0] ?? defaultTheme });
@@ -30,13 +30,34 @@ export function lookCss(look: LineLook, theme: Theme): string {
   return css.join('; ');
 }
 
+const fontChecks = new Map<string, boolean>();
+
+/**
+ * Whether `family` draws CJK characters exactly two columns wide. When a Latin-only monospace
+ * font falls back to a CJK font of another width, padded tables would not line up.
+ */
+function cjkFitsColumns(family: string): boolean {
+  let fits = fontChecks.get(family);
+  if (fits === undefined) {
+    const ctx = typeof document === 'undefined' ? null : document.createElement('canvas').getContext('2d');
+    if (!ctx) return true;
+    ctx.font = `20px ${family}`;
+    const column = ctx.measureText('0').width;
+    fits = ['가', '中', 'あ'].every((ch) => Math.abs(ctx.measureText(ch).width - 2 * column) < 0.5);
+    fontChecks.set(family, fits);
+  }
+  return fits;
+}
+
 class MarkdownDecorations {
   decorations: DecorationSet;
   private theme: Theme;
+  private fixWide: boolean;
   private cache = new Map<string, Decoration>();
 
   constructor(view: EditorView) {
     this.theme = view.state.facet(markdownTheme);
+    this.fixWide = !cjkFitsColumns(this.theme.monospaceFamily);
     this.decorations = this.build(view);
   }
 
@@ -44,6 +65,7 @@ class MarkdownDecorations {
     const theme = update.state.facet(markdownTheme);
     if (theme !== this.theme) {
       this.theme = theme;
+      this.fixWide = !cjkFitsColumns(theme.monospaceFamily);
       this.cache.clear();
     } else if (!update.docChanged && !update.viewportChanged && syntaxTree(update.state) === syntaxTree(update.startState)) {
       return;
@@ -74,7 +96,37 @@ class MarkdownDecorations {
     const ranges: Range<Decoration>[] = [];
     for (const [lineFrom, styles] of lines) ranges.push(this.lineDecoration([...styles]).range(lineFrom));
     for (const span of spans) ranges.push(this.markDecoration(span.styles).range(span.from, span.to));
+    if (this.fixWide) {
+      for (const [lineFrom, styles] of lines) if (styles.has('table')) this.wideRuns(doc.lineAt(lineFrom), ranges);
+    }
     return Decoration.set(ranges, true);
+  }
+
+  /** Draws runs of wide characters exactly two columns each, so table pipes line up. */
+  private wideRuns(line: Line, ranges: Range<Decoration>[]): void {
+    let start = -1;
+    let columns = 0;
+    const flush = (end: number) => {
+      if (start < 0) return;
+      const key = `wide:${columns}`;
+      let deco = this.cache.get(key);
+      if (!deco) {
+        deco = Decoration.mark({ class: 'sm-wide', attributes: { style: `display: inline-block; width: ${columns}ch; text-align: center` } });
+        this.cache.set(key, deco);
+      }
+      ranges.push(deco.range(line.from + start, line.from + end));
+      start = -1;
+      columns = 0;
+    };
+    let i = 0;
+    for (const ch of line.text) {
+      if (charWidth(ch.codePointAt(0)!) === 2) {
+        if (start < 0) start = i;
+        columns += 2;
+      } else flush(i);
+      i += ch.length;
+    }
+    flush(i);
   }
 
   private lineDecoration(styles: BlockStyle[]): Decoration {

@@ -1,3 +1,4 @@
+import { defaultTheme } from '@simplemark/model';
 import { createEditor } from '../src/index';
 
 const sample = `# SimpleMark
@@ -55,5 +56,11 @@ The end.
 const source = document.getElementById('source')!;
 const show = (text: string) => (source.textContent = text);
 
-createEditor(document.getElementById('editor')!, { doc: sample, onChange: show });
+// ?mono=<font family> tries another monospace font, e.g. a Latin-only one for table alignment.
+const mono = new URLSearchParams(location.search).get('mono');
+const theme = mono ? { ...defaultTheme, monospaceFamily: mono } : defaultTheme;
+
+const view = createEditor(document.getElementById('editor')!, { doc: sample, theme, onChange: show });
+// For poking at the editor from the console or browser tests.
+Object.assign(window, { view });
 show(sample);

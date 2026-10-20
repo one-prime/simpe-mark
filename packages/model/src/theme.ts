@@ -46,6 +46,7 @@ export const defaultTheme: Theme = {
     codeblock: { monospace: true, lineBackground: '#f6f8fa' },
     table: { monospace: true },
     tableHeader: { fontWeight: 700 },
+    tableRowAlt: { lineBackground: '#f6f8fa' },
     hr: {},
     h1: { fontScale: 1.6, fontWeight: 700 },
     h2: { fontScale: 1.4, fontWeight: 700 },
