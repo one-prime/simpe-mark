@@ -1,4 +1,5 @@
 export { markdownExtensions, markdownParser } from './parser';
+export { mathSource, previewBlocks, type ImageSource, type PreviewBlock } from './previews';
 export {
   BLOCK_STYLES,
   INLINE_STYLES,

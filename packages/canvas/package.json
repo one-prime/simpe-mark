@@ -1,0 +1,23 @@
+{
+  "name": "@simple-mark/canvas",
+  "version": "0.2.0",
+  "private": true,
+  "type": "module",
+  "description": "Draws Markdown on a <canvas> without hiding its syntax: layout (no DOM) and Canvas 2D painting.",
+  "keywords": [
+    "canvas"
+  ],
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "dev": "vite demo --config vite.config.ts --port 5181 --strictPort"
+  },
+  "dependencies": {
+    "@simple-mark/math": "*",
+    "@simple-mark/model": "*"
+  },
+  "devDependencies": {
+    "@simple-mark/codemirror": "*"
+  }
+}

@@ -6,8 +6,9 @@
 import { syntaxTree } from '@codemirror/language';
 import { Facet, StateField, type EditorState, type Extension, type Range } from '@codemirror/state';
 import { Decoration, EditorView, WidgetType, hoverTooltip, showTooltip, type DecorationSet, type Tooltip } from '@codemirror/view';
-import type { SyntaxNode, Tree } from '@lezer/common';
+import type { SyntaxNode } from '@lezer/common';
 import type { MathResult } from '@simple-mark/math';
+import { mathSource, previewBlocks, type ImageSource } from '@simple-mark/model';
 import { lineHeightHints } from './line-heights';
 import { loadMath, loadedMath } from './math-loader';
 import {
@@ -89,17 +90,6 @@ class MathBlockWidget extends WidgetType {
   }
 }
 
-/** The TeX of a math node: the text between its delimiters, without quote markers. */
-function mathTex(state: EditorState, node: SyntaxNode): string | null {
-  const marks = node.getChildren('MathMark');
-  if (marks.length < 2) return null; // not closed yet
-  if (node.name === 'InlineMath') return state.sliceDoc(marks[0]!.to, marks[1]!.from);
-  return node
-    .getChildren('MathText')
-    .map((text) => state.sliceDoc(text.from, text.to))
-    .join('\n');
-}
-
 // ---- images ------------------------------------------------------------------------------------
 
 export interface ImageRef {
@@ -111,40 +101,11 @@ export interface ImageRef {
   problem?: string;
 }
 
-const normalizeLabel = (label: string) => label.slice(1, -1).trim().replace(/\s+/g, ' ').toLowerCase();
-
-/** A link destination as written, without the optional angle brackets (`<a b.png>`). */
-const destination = (state: EditorState, url: SyntaxNode) => state.sliceDoc(url.from, url.to).replace(/^<(.*)>$/, '$1');
-
-/** Link reference definitions (`[label]: url`) of the document, by normalized label. */
-function linkDefinitions(state: EditorState, tree: Tree): Map<string, string> {
-  const definitions = new Map<string, string>();
-  for (let node = tree.topNode.firstChild; node; node = node.nextSibling) {
-    if (node.name !== 'LinkReference') continue;
-    const label = node.getChild('LinkLabel');
-    const url = node.getChild('URL');
-    if (label && url) {
-      const key = normalizeLabel(state.sliceDoc(label.from, label.to));
-      if (!definitions.has(key)) definitions.set(key, destination(state, url));
-    }
-  }
-  return definitions;
-}
-
-function imageRef(state: EditorState, node: SyntaxNode, definitions: Map<string, string>, resolve: ImageResolver): ImageRef {
-  const marks = node.getChildren('LinkMark');
-  const alt = marks.length >= 2 ? state.sliceDoc(marks[0]!.to, marks[1]!.from) : '';
-  const url = node.getChild('URL');
-  let raw: string | undefined = url ? destination(state, url) : undefined;
-  if (raw === undefined) {
-    // [alt][label], [alt][] or [alt]: the label names a definition.
-    const labelNode = node.getChild('LinkLabel');
-    const labelText = labelNode && labelNode.to - labelNode.from > 2 ? state.sliceDoc(labelNode.from, labelNode.to) : `[${alt}]`;
-    raw = definitions.get(normalizeLabel(labelText));
-    if (raw === undefined) return { raw: labelText, src: null, alt, problem: `No definition for ${labelText}` };
-  }
-  const src = resolve(raw);
-  return src === null ? { raw, src, alt, problem: `Can't load ${raw}` } : { raw, src, alt };
+/** An image from the document with its path resolved by the host. */
+function imageRef(image: ImageSource, resolve: ImageResolver): ImageRef {
+  if (image.src === null) return { raw: image.raw, src: null, alt: image.alt, problem: `No definition for ${image.raw}` };
+  const src = resolve(image.src);
+  return src === null ? { raw: image.raw, src, alt: image.alt, problem: `Can't load ${image.raw}` } : { raw: image.raw, src, alt: image.alt };
 }
 
 class ImageWidget extends WidgetType {
@@ -231,32 +192,11 @@ export type BlockPreview = { at: number; images: ImageRef[] } | { at: number; te
 
 /** What to preview below which lines: the images of each line, and closed non-empty $$ blocks. */
 export function blockPreviewSources(state: EditorState): BlockPreview[] {
-  const tree = syntaxTree(state);
   const resolve = state.facet(imageResolver);
-  const definitions = linkDefinitions(state, tree);
-  const imagesByLine = new Map<number, ImageRef[]>();
-  const previews: BlockPreview[] = [];
-  tree.iterate({
-    enter(node) {
-      if (node.name === 'Image') {
-        const at = state.doc.lineAt(node.to).to;
-        let images = imagesByLine.get(at);
-        if (!images) {
-          imagesByLine.set(at, (images = []));
-          previews.push({ at, images });
-        }
-        images.push(imageRef(state, node.node, definitions, resolve));
-        return false;
-      }
-      if (node.name === 'BlockMath') {
-        const tex = mathTex(state, node.node);
-        if (tex !== null && tex.trim()) previews.push({ at: state.doc.lineAt(node.to).to, tex });
-        return false;
-      }
-      return undefined;
-    },
-  });
-  return previews;
+  // doc.toString() joins lines with "\n", so offsets are CodeMirror positions.
+  return previewBlocks(syntaxTree(state), state.doc.toString()).map((block) =>
+    'tex' in block ? block : { at: block.at, images: block.images.map((image) => imageRef(image, resolve)) },
+  );
 }
 
 function blockPreviews(state: EditorState): DecorationSet {
@@ -295,7 +235,7 @@ function inlineMathAt(state: EditorState, pos: number): SyntaxNode | null {
 
 function mathTooltip(state: EditorState, pos: number): Tooltip | null {
   const node = inlineMathAt(state, pos);
-  const tex = node && mathTex(state, node);
+  const tex = node && mathSource(node, (from, to) => state.sliceDoc(from, to));
   if (!node || !tex) return null;
   const display = node.getChild('MathMark')!.to - node.from === 2;
   return {

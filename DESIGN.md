@@ -85,19 +85,34 @@ packages/
 ### Publishing: `@simple-mark/*` on npm
 
 Public on npm under the org `@simple-mark`: `@simple-mark/model`, `@simple-mark/math`,
-`@simple-mark/codemirror` (and `@simple-mark/canvas` once it exists). The unscoped name
+`@simple-mark/canvas`, `@simple-mark/codemirror`, all at the same version (0.1.0 had no
+canvas; 0.2.0 adds it and moves preview detection into `model`). The unscoped name
 `simple-mark` was refused by npm as too similar to the existing `simplemark` package.
 
 In the repo, each package exports its TypeScript source (the workspace, Vite and the tests
 use it directly). `npm run release` (`scripts/release.mjs`) builds each with tsdown into
 `packages/<name>/dist`, writes a publish-ready `package.json` there (exports to the built
 files, `@simple-mark/*` dependencies at the current version, everything else external), copies
-the package README and the license, and publishes in dependency order (model, math,
-codemirror). `-- --pack` makes `.tgz` files in `dist/release`, `-- --dry-run` checks.
+the package README and the license, and publishes in dependency order (model, math, canvas,
+codemirror), skipping versions already on npm (a rerun after a partial release). `-- --pack` makes `.tgz` files in `dist/release`, `-- --dry-run` checks.
 Side-effect imports are stripped from the `.d.ts` files: they carry no types and would pull
 MathJax's own types, which fail strict checks, into users' type checking. Checked by
 installing the three `.tgz` files into an empty project (TypeScript 5 strict with library
 checks, Vite build, browser run with lazy math). npm publishing needs 2FA on the account.
+
+### Canvas: `@simple-mark/canvas`
+
+`layoutMarkdown(text, options)` (no DOM; widths from the host's `measure`) turns text into
+positioned runs, line decorations and image/math boxes with the editor's styling;
+`paintMarkdown(ctx, layout, sources)` draws it with Canvas 2D; `createMathImages` makes
+MathJax SVGs drawable in the text's color and sizes them by the font's real x-height.
+Wrapping breaks between words and anywhere between CJK characters, like the browser; table
+lines are laid out on a column grid (wide characters exactly two columns). Editor sizes
+(preview padding, image max height, quote bar) are converted to em so a canvas text at any
+font size matches the editor at 15px. What gets previewed below which line
+(`previewBlocks`, `mathSource`) lives in `model` and is shared with the editor.
+Side-by-side check (`npm run dev -w @simple-mark/canvas`): formula 212.7×50.2 vs
+214.3×50.5 px, total vertical drift 1.6 px over 936 px.
 
 ### VS Code
 

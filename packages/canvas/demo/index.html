@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>SimpleMark canvas demo</title>
+    <link rel="icon" href="data:," />
+    <style>
+      body { margin: 0; background: #eef0f2; font-family: system-ui, sans-serif; }
+      main { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; padding: 16px; height: calc(100vh - 32px); box-sizing: border-box; }
+      section { display: flex; flex-direction: column; min-height: 0; }
+      h2 { margin: 0 0 8px; font-size: 13px; font-weight: 600; color: #59636e; }
+      .pane { flex: 1; min-height: 0; overflow: auto; background: #fff; border: 1px solid #d1d9e0; border-radius: 6px; }
+      #editor .cm-editor { font-size: 15px; }
+      #editor .cm-content { padding: 16px 20px; }
+      #editor .cm-editor.cm-focused { outline: none; }
+      #canvas-pane canvas { display: block; margin: 16px 20px; }
+    </style>
+  </head>
+  <body>
+    <main>
+      <section><h2>Editor (@simple-mark/codemirror)</h2><div id="editor" class="pane"></div></section>
+      <section><h2>Canvas (@simple-mark/canvas)</h2><div id="canvas-pane" class="pane"><canvas id="canvas"></canvas></div></section>
+    </main>
+    <script type="module" src="./main.ts"></script>
+  </body>
+</html>

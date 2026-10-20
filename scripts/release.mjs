@@ -15,12 +15,21 @@ import { join } from 'node:path';
 import { build } from 'tsdown';
 
 /** In dependency order: a package is published after the packages it uses. */
-const PACKAGES = ['model', 'math', 'codemirror'];
+const PACKAGES = ['model', 'math', 'canvas', 'codemirror'];
 const root = new URL('..', import.meta.url).pathname;
 const mode = process.argv.includes('--pack') ? 'pack' : process.argv.includes('--dry-run') ? 'dry-run' : 'publish';
 const read = (path) => JSON.parse(readFileSync(path, 'utf8'));
 
 const repository = { type: 'git', url: 'git+https://github.com/one-prime/simple-mark.git' };
+
+/** Whether this exact version is on the npm registry. */
+function isPublished(name, version) {
+  try {
+    return execFileSync('npm', ['view', `${name}@${version}`, 'version'], { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] }).trim() === version;
+  } catch {
+    return false; // not found (404): not published
+  }
+}
 const versions = Object.fromEntries(PACKAGES.map((name) => [`@simple-mark/${name}`, read(join(root, 'packages', name, 'package.json')).version]));
 
 for (const name of PACKAGES) {
@@ -69,7 +78,11 @@ for (const name of PACKAGES) {
   copyFileSync(join(dir, 'README.md'), join(dist, 'README.md'));
   copyFileSync(join(root, 'LICENSE'), join(dist, 'LICENSE'));
 
-  if (mode === 'pack') {
+  // A rerun after a partial release publishes only what is missing (versions can't be reused).
+  const published = mode === 'publish' && isPublished(pkg.name, pkg.version);
+  if (published) {
+    console.log(`${pkg.name}@${pkg.version} is already on npm; skipped`);
+  } else if (mode === 'pack') {
     const out = join(root, 'dist/release');
     mkdirSync(out, { recursive: true });
     execFileSync('npm', ['pack', dist, '--pack-destination', out], { stdio: 'inherit' });
