@@ -7,7 +7,8 @@ or a canvas renderer.
 - Parses CommonMark + GFM + `$math$` (Lezer) into **styled ranges**: line styles (headings,
   quotes, code blocks, tables, …) and non-overlapping inline spans (strong, em, code, link,
   and `mark` for the syntax characters, which stay visible and dimmed).
-- A **theme** as plain data, and `resolveLook` to turn styles into font/color properties.
+- A **theme** as plain data (the default follows GitHub's Markdown styles), and `resolveLook` /
+  `resolveLineLook` to turn styles into font, color and line properties.
 - **Tables**: display width (Korean, Chinese, Japanese count as two columns), row splitting,
   and re-aligning a table by padding its cells.
 

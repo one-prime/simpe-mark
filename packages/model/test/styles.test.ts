@@ -133,8 +133,23 @@ describe('theme', () => {
   });
 
   it('combines line and text looks; line-only properties stay on the line', () => {
-    expect(resolveLook(['h1'], ['em'])).toEqual({ fontScale: 1.6, fontWeight: 700, italic: true });
+    expect(resolveLook(['h1'], ['em'])).toEqual({ fontScale: 2, fontWeight: 600, italic: true });
     expect(resolveLook(['codeblock'], [])).toEqual({ monospace: true });
     expect(resolveLineLook(['quote', 'codeblock'])).toMatchObject({ lineBackground: '#f6f8fa', borderLeft: '#d1d9e0' });
+  });
+
+  it('adds up indents of nested blocks', () => {
+    expect(resolveLineLook(['quote', 'codeblock']).indent).toBe(2);
+  });
+
+  it('rounds and borders blocks only at their edges', () => {
+    const middle = { first: [], last: [] };
+    expect(resolveLineLook(['codeblock'], defaultTheme, { first: ['codeblock'], last: [] })).toMatchObject({ radiusTop: 6 / 16 });
+    expect(resolveLineLook(['codeblock'], defaultTheme, middle)).not.toHaveProperty('radiusTop');
+    expect(resolveLineLook(['codeblock'], defaultTheme, { first: [], last: ['codeblock'] })).toMatchObject({ radiusBottom: 6 / 16 });
+    expect(resolveLineLook(['h1'], defaultTheme, middle)).not.toHaveProperty('borderBottom');
+    expect(resolveLineLook(['h1'], defaultTheme, { first: [], last: ['h1'] }).borderBottom).toBe(defaultTheme.block.h1.borderBottom);
+    // Corners belong to the block whose background shows: a table row in a code block has none.
+    expect(resolveLineLook(['codeblock', 'tableRowAlt'])).not.toHaveProperty('radiusTop');
   });
 });

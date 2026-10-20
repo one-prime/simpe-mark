@@ -1,11 +1,15 @@
 // Colors from the user's VS Code theme (CSS variables VS Code sets in every webview), so the
-// editor follows light, dark and high-contrast themes and theme switches.
+// editor follows light, dark and high-contrast themes and theme switches. Styled like VS Code's
+// own Markdown preview (extensions/markdown-language-features/media/markdown.css and the
+// webview's default styles): quotes with a background, rounded code, lines under h1 and h2.
 
 import { EditorView } from '@codemirror/view';
 import { defaultTheme, type Theme } from '@simple-mark/model';
 
 const dim = 'var(--vscode-descriptionForeground)';
 const codeBackground = 'var(--vscode-textCodeBlock-background)';
+// The preview's borders: black or white at 18%, i.e. the text color at 18%.
+const separator = 'color-mix(in srgb, var(--vscode-editor-foreground) 18%, transparent)';
 
 export const vscodeTheme: Theme = {
   ...defaultTheme,
@@ -15,16 +19,24 @@ export const vscodeTheme: Theme = {
   color: 'var(--vscode-editor-foreground)',
   block: {
     ...defaultTheme.block,
-    quote: { color: dim, borderLeft: 'var(--vscode-textBlockQuote-border)' },
-    codeblock: { monospace: true, lineBackground: codeBackground },
+    quote: { color: dim, borderLeft: 'var(--vscode-textBlockQuote-border)', lineBackground: 'var(--vscode-textBlockQuote-background)', indent: 1 },
+    codeblock: { monospace: true, lineBackground: codeBackground, lineRadius: 3 / 14, indent: 1 },
     mathblock: { monospace: true, color: 'var(--vscode-textPreformat-foreground)' },
     tableRowAlt: { lineBackground: 'color-mix(in srgb, var(--vscode-editor-foreground) 5%, transparent)' },
-    h6: { fontWeight: 700, color: dim },
+    hr: { rule: separator },
+    h1: { ...defaultTheme.block.h1, borderBottom: separator },
+    h2: { ...defaultTheme.block.h2, borderBottom: separator },
+    h6: { ...defaultTheme.block.h6, color: dim },
   },
   inline: {
     ...defaultTheme.inline,
     link: { color: 'var(--vscode-textLink-foreground)' },
-    code: { monospace: true, background: codeBackground },
+    code: {
+      monospace: true,
+      color: 'var(--vscode-textPreformat-foreground)',
+      background: `var(--vscode-textPreformat-background, ${codeBackground})`,
+      radius: 4 / 14,
+    },
     math: { monospace: true, color: 'var(--vscode-textPreformat-foreground)' },
     url: { color: dim, underline: true },
     mark: { ...defaultTheme.inline.mark, color: dim },

@@ -10,6 +10,7 @@ import {
   previewBlocks,
   resolveLineLook,
   resolveLook,
+  STROKES,
   type BlockStyle,
   type InlineStyle,
   type Look,
@@ -65,21 +66,29 @@ export interface TextRun {
   lineFont: string;
   fontSize: number;
   color: string;
-  /** Behind this text only (inline code). */
+  /** Behind this text only (inline code); neighbouring runs with the same one share a box. */
   background?: string;
+  /** Corner radius of that box. */
+  radius?: number;
   strike?: boolean;
   underline?: boolean;
   /** Draw character by character on a grid of this column width (tables), wide ones in two columns. */
   column?: number;
 }
 
-/** A line's full-width background or bar (code blocks, table rows, quotes). */
+/** A line's full-width background, bar or lines (code blocks, table rows, quotes, headings, rules). */
 export interface LineDecoration {
   top: number;
   height: number;
   background?: string;
+  /** Corner radii of the background: top (first line of a code block) and bottom (last line). */
+  radius?: { top: number; bottom: number };
   /** A bar along the left edge: its color and width. */
   bar?: { color: string; width: number };
+  /** A line along the bottom edge (under h1, h2). */
+  border?: { color: string; width: number };
+  /** A line across the middle (horizontal rules). */
+  rule?: { color: string; width: number };
 }
 
 export interface ImageBox {
@@ -121,8 +130,6 @@ const EM = {
   previewBottom: 8 / 15,
   imageMaxHeight: 320 / 15,
   imageGap: 8 / 15,
-  quoteBar: 3 / 15,
-  quoteIndent: 12 / 15,
 };
 
 const ERROR_COLOR = '#cf222e';
@@ -183,12 +190,16 @@ export function layoutMarkdown(source: string, options: LayoutOptions): Markdown
     return lo;
   };
 
-  // Block styles of each line.
-  const lineBlocks: Set<BlockStyle>[] = lineStarts.map(() => new Set());
+  // Block styles of each line, and the styles whose block starts or ends there.
+  const lineBlocks = lineStarts.map(() => ({ styles: new Set<BlockStyle>(), first: new Set<BlockStyle>(), last: new Set<BlockStyle>() }));
   for (const block of blocks) {
     let end = block.to;
     if (end > block.from && isLineStart.has(end)) end--;
-    for (let n = lineOf(block.from); n <= lineOf(end); n++) lineBlocks[n]!.add(block.style);
+    const first = lineOf(block.from);
+    const last = lineOf(end);
+    for (let n = first; n <= last; n++) lineBlocks[n]!.styles.add(block.style);
+    lineBlocks[first]!.first.add(block.style);
+    lineBlocks[last]!.last.add(block.style);
   }
   // Previews below each line.
   const previews = new Map<number, ReturnType<typeof previewBlocks>>();
@@ -212,12 +223,12 @@ export function layoutMarkdown(source: string, options: LayoutOptions): Markdown
   for (let n = 0; n < lineStarts.length; n++) {
     const from = lineStarts[n]!;
     const to = lineEndOf(n);
-    const styles = [...lineBlocks[n]!];
-    const lineLook = resolveLineLook(styles, theme);
+    const styles = [...lineBlocks[n]!.styles];
+    const lineLook = resolveLineLook(styles, theme, lineBlocks[n]!);
     const scale = lineLook.fontScale ?? 1;
     const lineHeight = style.lineHeight * style.fontSize * scale;
     const textTop = (lineHeight - style.fontSize * scale) / 2;
-    const indent = lineLook.borderLeft ? EM.quoteIndent * style.fontSize : 0;
+    const indent = (lineLook.indent ?? 0) * style.fontSize;
     const lineFont = fontOf(resolveLook(styles, [], theme), style, theme, scale);
     const table = styles.includes('table');
     const available = wrapWidth - indent;
@@ -287,7 +298,7 @@ export function layoutMarkdown(source: string, options: LayoutOptions): Markdown
     }
 
     // Runs: neighbouring pieces with the same styles become one run.
-    for (const row of visual) {
+    for (const [r, row] of visual.entries()) {
       const first = runs.length;
       let rx = indent;
       for (const piece of row) {
@@ -310,6 +321,7 @@ export function layoutMarkdown(source: string, options: LayoutOptions): Markdown
             fontSize: style.fontSize * scale,
             color: look.color ?? style.color,
             ...(look.background ? { background: look.background } : {}),
+            ...(look.background && look.radius ? { radius: look.radius * style.fontSize * scale } : {}),
             ...(look.strike ? { strike: true } : {}),
             ...(look.underline ? { underline: true } : {}),
             ...(table ? { column: measure('0', font) } : {}),
@@ -320,12 +332,19 @@ export function layoutMarkdown(source: string, options: LayoutOptions): Markdown
       }
       rows.push([first, runs.length, rx]);
       maxWidth = Math.max(maxWidth, rx);
-      if (lineLook.lineBackground || lineLook.borderLeft) {
+      // Corners and the bottom border belong to the first and last visual line of a wrapped line.
+      const radiusTop = r === 0 ? (lineLook.radiusTop ?? 0) * style.fontSize : 0;
+      const radiusBottom = r === visual.length - 1 ? (lineLook.radiusBottom ?? 0) * style.fontSize : 0;
+      const border = r === visual.length - 1 ? lineLook.borderBottom : undefined;
+      if (lineLook.lineBackground || lineLook.borderLeft || border || lineLook.rule) {
         lines.push({
           top: y,
           height: lineHeight,
           ...(lineLook.lineBackground ? { background: lineLook.lineBackground } : {}),
-          ...(lineLook.borderLeft ? { bar: { color: lineLook.borderLeft, width: EM.quoteBar * style.fontSize } } : {}),
+          ...(lineLook.lineBackground && (radiusTop || radiusBottom) ? { radius: { top: radiusTop, bottom: radiusBottom } } : {}),
+          ...(lineLook.borderLeft ? { bar: { color: lineLook.borderLeft, width: STROKES.bar * style.fontSize } } : {}),
+          ...(border ? { border: { color: border, width: STROKES.border * style.fontSize } } : {}),
+          ...(lineLook.rule ? { rule: { color: lineLook.rule, width: STROKES.rule * style.fontSize } } : {}),
         });
       }
       y += lineHeight;

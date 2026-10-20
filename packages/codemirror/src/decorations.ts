@@ -7,13 +7,25 @@ import { syntaxTree } from '@codemirror/language';
 import { Facet, type EditorState, type Line, type Range } from '@codemirror/state';
 import { Decoration, ViewPlugin, type DecorationSet, type EditorView, type ViewUpdate } from '@codemirror/view';
 import { followKeyName } from './links';
-import { charWidth, defaultTheme, markdownStyles, resolveLineLook, resolveLook, type BlockStyle, type InlineStyle, type LineLook, type Theme } from '@simple-mark/model';
+import {
+  STROKES,
+  charWidth,
+  defaultTheme,
+  markdownStyles,
+  resolveLineLook,
+  resolveLook,
+  type BlockStyle,
+  type InlineStyle,
+  type ResolvedLineLook,
+  type Span,
+  type Theme,
+} from '@simple-mark/model';
 
 /** The theme the editor draws with. */
 export const markdownTheme = Facet.define<Theme, Theme>({ combine: (values) => values[0] ?? defaultTheme });
 
 /** A look as an inline CSS declaration list. */
-export function lookCss(look: LineLook, theme: Theme): string {
+export function lookCss(look: ResolvedLineLook, theme: Theme): string {
   const css: string[] = [];
   if (look.fontScale !== undefined) css.push(`font-size: ${look.fontScale}em`);
   if (look.fontWeight !== undefined) css.push(`font-weight: ${look.fontWeight}`);
@@ -21,14 +33,29 @@ export function lookCss(look: LineLook, theme: Theme): string {
   if (look.monospace !== undefined) css.push(`font-family: ${look.monospace ? theme.monospaceFamily : theme.fontFamily}`);
   if (look.color !== undefined) css.push(`color: ${look.color}`);
   if (look.background !== undefined) css.push(`background-color: ${look.background}`);
+  if (look.radius !== undefined) css.push(`border-radius: ${look.radius}em`);
   if (look.strike !== undefined || look.underline !== undefined) {
     const lines = [look.strike && 'line-through', look.underline && 'underline'].filter(Boolean);
     css.push(`text-decoration: ${lines.join(' ') || 'none'}`);
   }
+  // Line sizes are in em of the base font, as in @simple-mark/canvas; the line's own em is
+  // scaled by its font size (headings).
+  const em = (size: number) => `${size / (look.fontScale ?? 1)}em`;
   if (look.lineBackground !== undefined) css.push(`background-color: ${look.lineBackground}`);
-  // An inset shadow draws the bar without changing the line's width. In em (3px and 12px at
-  // 15px), like @simple-mark/canvas, so the bar scales with the text.
-  if (look.borderLeft !== undefined) css.push(`box-shadow: inset ${3 / 15}em 0 0 ${look.borderLeft}`, `padding-left: ${12 / 15}em`);
+  if (look.radiusTop || look.radiusBottom) {
+    const [top, bottom] = [em(look.radiusTop ?? 0), em(look.radiusBottom ?? 0)];
+    css.push(`border-radius: ${top} ${top} ${bottom} ${bottom}`);
+  }
+  // Inset shadows draw bars and borders without changing the line's size.
+  const shadows: string[] = [];
+  if (look.borderLeft !== undefined) shadows.push(`inset ${em(STROKES.bar)} 0 0 ${look.borderLeft}`);
+  if (look.borderBottom !== undefined) shadows.push(`inset 0 -${em(STROKES.border)} 0 ${look.borderBottom}`);
+  if (shadows.length) css.push(`box-shadow: ${shadows.join(', ')}`);
+  if (look.rule !== undefined) {
+    const half = em(STROKES.rule / 2);
+    css.push(`background-image: linear-gradient(transparent calc(50% - ${half}), ${look.rule} 0, ${look.rule} calc(50% + ${half}), transparent 0)`);
+  }
+  if (look.indent !== undefined) css.push(`padding-left: ${em(look.indent)}`);
   return css.join('; ');
 }
 
@@ -92,29 +119,34 @@ class MarkdownDecorations {
     const { from, to } = view.viewport;
     const { blocks, spans } = markdownStyles(syntaxTree(view.state), from, to);
 
-    const lines = new Map<number, Set<BlockStyle>>();
+    /** Block styles of each line, and the styles whose block starts or ends there. */
+    const lines = new Map<number, { styles: Set<BlockStyle>; first: Set<BlockStyle>; last: Set<BlockStyle> }>();
     for (const block of blocks) {
-      const start = Math.max(block.from, from);
-      let end = Math.min(block.to, to);
       // A block ending right after a line break does not reach the next line.
-      if (end > start && doc.lineAt(end).from === end) end--;
-      for (let pos = start; pos <= end; ) {
+      let blockEnd = block.to;
+      if (blockEnd > block.from && doc.lineAt(blockEnd).from === blockEnd) blockEnd--;
+      const firstLine = doc.lineAt(block.from).from;
+      const lastLine = doc.lineAt(blockEnd).from;
+      for (let pos = Math.max(block.from, from), end = Math.min(blockEnd, to); pos <= end; ) {
         const line = doc.lineAt(pos);
-        let styles = lines.get(line.from);
-        if (!styles) lines.set(line.from, (styles = new Set()));
-        styles.add(block.style);
+        let entry = lines.get(line.from);
+        if (!entry) lines.set(line.from, (entry = { styles: new Set(), first: new Set(), last: new Set() }));
+        entry.styles.add(block.style);
+        if (line.from === firstLine) entry.first.add(block.style);
+        if (line.from === lastLine) entry.last.add(block.style);
         pos = line.to + 1;
       }
     }
 
     const ranges: Range<Decoration>[] = [];
-    for (const [lineFrom, styles] of lines) ranges.push(this.lineDecoration([...styles]).range(lineFrom));
+    for (const [lineFrom, entry] of lines) ranges.push(this.lineDecoration(entry).range(lineFrom));
+    for (const box of this.backgroundBoxes(spans)) ranges.push(box);
     for (const span of spans) ranges.push(this.markDecoration(span.styles).range(span.from, span.to));
     // CodeMirror learns the normal line height from the first short line of plain text it finds
     // on screen. The text line of a setext heading ("Title" above "---") is plain text in a
     // bigger font, which made every off-screen line estimated 1.4× too tall. Wrapping it in a
     // span makes CodeMirror skip it.
-    for (const [lineFrom, styles] of lines) {
+    for (const [lineFrom, { styles }] of lines) {
       const line = doc.lineAt(lineFrom);
       if (line.length && [...styles].some((s) => /^h[1-6]$/.test(s))) ranges.push(headingText.range(line.from, line.to));
     }
@@ -123,11 +155,49 @@ class MarkdownDecorations {
       // the browser (Firefox with a Korean IME) drop the composed text onto a stray line. The
       // row being typed in is re-aligned on Tab/Enter anyway.
       const cursorLines = new Set(view.state.selection.ranges.map((r) => doc.lineAt(r.head).from));
-      for (const [lineFrom, styles] of lines) {
+      for (const [lineFrom, { styles }] of lines) {
         if (styles.has('table') && !cursorLines.has(lineFrom)) this.wideRuns(doc.lineAt(lineFrom), ranges);
       }
     }
     return Decoration.set(ranges, true);
+  }
+
+  /**
+   * One element behind each run of neighbouring spans with the same background (inline code
+   * with its backticks), so the background has rounded corners only at its ends. The spans
+   * themselves draw no background. Being longer, a box wraps the spans' elements.
+   */
+  private backgroundBoxes(spans: readonly Span[]): Range<Decoration>[] {
+    const boxes: Range<Decoration>[] = [];
+    let open: { from: number; to: number; look: ReturnType<typeof resolveLook> } | null = null;
+    const flush = () => {
+      if (!open) return;
+      const { background, radius, monospace } = open.look;
+      const look = { background, ...(radius !== undefined ? { radius } : {}), ...(monospace !== undefined ? { monospace } : {}) };
+      const key = `box:${JSON.stringify(look)}`;
+      let deco = this.cache.get(key);
+      if (!deco) {
+        // The box is in the text's font, so its background is as tall as the text's would be;
+        // line-height 0 keeps the line's height (see markDecoration). Each wrapped piece gets
+        // its own corners, as on the canvas.
+        const css = `${lookCss(look, this.theme)}; line-height: 0; -webkit-box-decoration-break: clone; box-decoration-break: clone`;
+        deco = Decoration.mark({ class: 'sm-box', attributes: { style: css } });
+        this.cache.set(key, deco);
+      }
+      boxes.push(deco.range(open.from, open.to));
+      open = null;
+    };
+    for (const span of spans) {
+      const look = resolveLook([], span.styles, this.theme);
+      if (look.background === undefined) flush();
+      else if (open && open.to === span.from && open.look.background === look.background) open.to = span.to;
+      else {
+        flush();
+        open = { from: span.from, to: span.to, look };
+      }
+    }
+    flush();
+    return boxes;
   }
 
   /** Draws runs of wide characters exactly two columns each, so table pipes line up. */
@@ -157,13 +227,14 @@ class MarkdownDecorations {
     flush(i);
   }
 
-  private lineDecoration(styles: BlockStyle[]): Decoration {
-    const key = `line:${styles.sort().join(' ')}`;
+  private lineDecoration(entry: { styles: Set<BlockStyle>; first: Set<BlockStyle>; last: Set<BlockStyle> }): Decoration {
+    const styles = [...entry.styles].sort();
+    const key = `line:${styles.join(' ')}|${[...entry.first].sort().join(' ')}|${[...entry.last].sort().join(' ')}`;
     let deco = this.cache.get(key);
     if (!deco) {
       deco = Decoration.line({
         class: styles.map((s) => `sm-line-${s}`).join(' '),
-        attributes: { style: lookCss(resolveLineLook(styles, this.theme), this.theme) },
+        attributes: { style: lookCss(resolveLineLook(styles, this.theme, entry), this.theme) },
       });
       this.cache.set(key, deco);
     }
@@ -176,10 +247,11 @@ class MarkdownDecorations {
     if (!deco) {
       // Line properties come from the line decoration; spans only set what they change.
       const linked = styles.includes('link') || styles.includes('url');
-      const look = resolveLook([], styles, this.theme);
+      // Backgrounds are drawn by the boxes around the spans (backgroundBoxes).
+      const { background: _background, radius: _radius, ...look } = resolveLook([], styles, this.theme);
       // Text in another font (inline code) would make the browser grow the line to fit that
       // font's ascent and descent. Lines keep their height and the line's baseline instead, as
-      // @simple-mark/canvas lays them out; the span's background is unchanged.
+      // @simple-mark/canvas lays them out; a background box is unchanged by it.
       const keepLine = look.monospace !== undefined || look.fontScale !== undefined;
       deco = Decoration.mark({
         class: styles.map((s) => `sm-${s}`).join(' '),

@@ -29,6 +29,18 @@ function baseline(ctx: CanvasRenderingContext2D, run: { top: number; height: num
   return { y: run.top + (run.height - (ascent + descent)) / 2 + ascent, alphabetic: true };
 }
 
+/** A filled rectangle with rounded corners (top-left, top-right, bottom-right, bottom-left). */
+function fillBox(ctx: CanvasRenderingContext2D, x: number, y: number, width: number, height: number, radius: number | [number, number, number, number]): void {
+  const radii = typeof radius === 'number' ? [radius, radius, radius, radius] : radius;
+  if (!radii.some((r) => r > 0) || !ctx.roundRect) {
+    ctx.fillRect(x, y, width, height);
+    return;
+  }
+  ctx.beginPath();
+  ctx.roundRect(x, y, width, height, radii.map((r) => Math.min(r, width / 2, height / 2)));
+  ctx.fill();
+}
+
 export function paintMarkdown(ctx: CanvasRenderingContext2D, layout: MarkdownLayout, sources: PaintSources = {}, color = '#1f2328'): void {
   ctx.save();
   ctx.textAlign = 'left';
@@ -36,22 +48,44 @@ export function paintMarkdown(ctx: CanvasRenderingContext2D, layout: MarkdownLay
   for (const line of layout.lines) {
     if (line.background) {
       ctx.fillStyle = line.background;
-      ctx.fillRect(0, line.top, layout.width, line.height);
+      fillBox(ctx, 0, line.top, layout.width, line.height, line.radius ? [line.radius.top, line.radius.top, line.radius.bottom, line.radius.bottom] : 0);
+    }
+    if (line.rule) {
+      ctx.fillStyle = line.rule.color;
+      ctx.fillRect(0, line.top + (line.height - line.rule.width) / 2, layout.width, line.rule.width);
     }
     if (line.bar) {
       ctx.fillStyle = line.bar.color;
       ctx.fillRect(0, line.top, line.bar.width, line.height);
     }
+    if (line.border) {
+      ctx.fillStyle = line.border.color;
+      ctx.fillRect(0, line.top + line.height - line.border.width, layout.width, line.border.width);
+    }
+  }
+
+  // Backgrounds first, one box for neighbouring runs with the same one (inline code with its
+  // backticks), so its corners are rounded only at its ends.
+  for (let i = 0; i < layout.runs.length; ) {
+    const run = layout.runs[i]!;
+    let end = run.x + run.width;
+    let j = i + 1;
+    if (run.background) {
+      for (; j < layout.runs.length; j++) {
+        const next = layout.runs[j]!;
+        if (next.background !== run.background || next.top !== run.top || Math.abs(next.x - end) > 0.5) break;
+        end = next.x + next.width;
+      }
+      ctx.fillStyle = run.background;
+      fillBox(ctx, run.x, run.textTop - run.fontSize * 0.1, end - run.x, run.fontSize * 1.2, run.radius ?? 0);
+    }
+    i = j;
   }
 
   for (const run of layout.runs) {
     const { y, alphabetic } = baseline(ctx, run);
     ctx.font = run.font;
     ctx.textBaseline = alphabetic ? 'alphabetic' : 'top';
-    if (run.background) {
-      ctx.fillStyle = run.background;
-      ctx.fillRect(run.x, run.textTop - run.fontSize * 0.1, run.width, run.fontSize * 1.2);
-    }
     ctx.fillStyle = run.color;
     if (run.column) {
       // Tables: every character on the column grid, wide ones centered in two columns.

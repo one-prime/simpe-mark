@@ -45,6 +45,25 @@ GFM (tables, task lists, strikethrough, autolinks) + math (`$…$`, `$$…$$`).
 | Block math `$$…$$` | Source visible; rendered math below the block |
 | Inline math `$…$` | Source visible; rendered math in a tooltip on hover / cursor inside |
 
+### Look
+
+The default theme follows GitHub's Markdown styles (`github-markdown-css`, light); the VS Code
+host follows VS Code's Markdown preview (`markdown-language-features/media/markdown.css` and
+the webview's default styles) with the user's theme colors. Both are MIT and were read for the
+values. Headings 2 / 1.5 / 1.25 / 1 / 0.875 / 0.85 em at weight 600, h1 and h2 with a line
+under them; quotes with a 0.25em bar and 1em indent; code blocks with 1em indent and rounded
+corners; inline code with a rounded background (the visible backticks stand in for GitHub's
+padding); `---` with a bar across the line. All of it is drawn without changing any size —
+inset shadows and backgrounds in the editor, rectangles on the canvas — so lines keep exactly
+line height × font size, and the editor and the canvas still agree.
+
+Corners and the line under a heading belong to the edges of a block: `resolveLineLook` takes
+which blocks start and end on a line, so a setext heading gets its line under `===` and a code
+block rounds only its fence lines. In the editor, inline code is one element around its spans
+(backticks included) for the rounded background; on the canvas, neighbouring runs with the same
+background are one box. Margins between blocks (GitHub's 16px) are not copied: they would add
+height that is not in the text.
+
 ### Tables
 
 - Monospace font inside table blocks so pipes line up.

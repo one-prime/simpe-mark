@@ -20,7 +20,7 @@ its `**`. The file on disk is exactly what you typed, byte for byte.
   path starting with `/` is an absolute path on disk, or else relative to the workspace folder
   (as in VS Code's own Markdown preview); images are found the same way. Click an image
   preview to open the image.
-- Follows your color theme. Saving, undo/redo and git work as with any text editor.
+- Follows your color theme, styled like VS Code's Markdown preview. Saving, undo/redo and git work as with any text editor.
 
 ## Usage
 

@@ -56,4 +56,23 @@ describe('paintMarkdown', () => {
     // Line 30 high, sans-serif 16 + 4: the baseline 5 + 16 from the top, for every run.
     expect(drawn.map((d) => d.y)).toEqual([21, 21, 21, 21, 21]);
   });
+
+  it('draws one rounded box behind inline code and its backticks', () => {
+    const layout = layoutMarkdown('the `key` is', {
+      width: 400,
+      style: { fontFamily: 'sans-serif', fontSize: 20, fontWeight: 400, lineHeight: 1.5, color: '#000' },
+      measure: (text) => text.length * 10,
+    });
+    const boxes: { x: number; width: number; radii: number[] }[] = [];
+    const { ctx } = recordingCanvas('alphabetic');
+    Object.assign(ctx, {
+      beginPath() {},
+      fill() {},
+      roundRect(x: number, _y: number, width: number, _height: number, radii: number[]) {
+        boxes.push({ x, width, radii });
+      },
+    });
+    paintMarkdown(ctx, layout);
+    expect(boxes).toEqual([{ x: 40, width: 50, radii: [7.5, 7.5, 7.5, 7.5] }]);
+  });
 });

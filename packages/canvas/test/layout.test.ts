@@ -29,17 +29,17 @@ describe('layoutMarkdown', () => {
     expect(result.runs.map((r) => r.text)).toEqual(['Some ', '**', 'bold', '**', ' text']);
     const [, mark, bold] = result.runs;
     expect(mark!.color).toBe(defaultTheme.inline.mark.color);
-    expect(bold!.font).toBe('700 20px sans-serif');
+    expect(bold!.font).toBe('600 20px sans-serif');
     expect(result.runs[0]!.color).toBe('#111');
   });
 
   it('makes headings bigger, with taller lines, and keeps the # dimmed', () => {
     const result = layout('# Title\nbody');
     const [hash, title, body] = result.runs;
-    expect(hash).toMatchObject({ text: '#', color: defaultTheme.inline.mark.color, fontSize: 32, height: 48 });
-    expect(title).toMatchObject({ text: ' Title', font: '700 32px sans-serif', top: 0 });
-    expect(body).toMatchObject({ text: 'body', top: 48, height: 30 });
-    expect(result.height).toBe(78);
+    expect(hash).toMatchObject({ text: '#', color: defaultTheme.inline.mark.color, fontSize: 40, height: 60 });
+    expect(title).toMatchObject({ text: ' Title', font: '600 40px sans-serif', top: 0 });
+    expect(body).toMatchObject({ text: 'body', top: 60, height: 30 });
+    expect(result.height).toBe(90);
   });
 
   it('wraps between words and breaks Korean anywhere, like the browser', () => {
@@ -72,6 +72,31 @@ describe('layoutMarkdown', () => {
     const quote = layout('> quoted');
     expect(quote.lines[0]!.bar).toMatchObject({ color: defaultTheme.block.quote.borderLeft });
     expect(quote.runs[0]!.x).toBeGreaterThan(0);
+  });
+
+  it('rounds the corners of code blocks at their first and last line', () => {
+    const code = layout('```\nx\n```');
+    const radius = defaultTheme.block.codeblock.lineRadius! * 20;
+    expect(code.lines.map((l) => l.radius)).toEqual([{ top: radius, bottom: 0 }, undefined, { top: 0, bottom: radius }]);
+    expect(code.runs.find((r) => r.text === 'x')!.x).toBe(20); // indent 1em
+  });
+
+  it('draws a line under h1 and h2 (under the last line of a setext heading) and across rules', () => {
+    const atx = layout('# Title\n### Small');
+    expect(atx.lines).toEqual([{ top: 0, height: 60, border: { color: defaultTheme.block.h1.borderBottom, width: 20 / 16 } }]);
+    const setext = layout('Title\n===');
+    expect(setext.lines.map((l) => [l.top, !!l.border])).toEqual([[60, true]]);
+    const wrapped = layout('# word word word word word word word word', { width: 200 });
+    const lastTop = Math.max(...wrapped.runs.map((r) => r.top));
+    expect(lastTop).toBeGreaterThan(0);
+    expect(wrapped.lines.map((l) => [l.top, !!l.border])).toEqual([[lastTop, true]]);
+    expect(layout('---').lines[0]!.rule).toEqual({ color: defaultTheme.block.hr.rule, width: 5 });
+  });
+
+  it('gives inline code a rounded background', () => {
+    const code = layout('a `b` c').runs.filter((r) => r.background);
+    expect(code.map((r) => r.text)).toEqual(['`', 'b', '`']);
+    expect(code.every((r) => r.radius === defaultTheme.inline.code.radius! * 20)).toBe(true);
   });
 
   it('puts images below their line, scaled to fit, with placeholders while loading', () => {

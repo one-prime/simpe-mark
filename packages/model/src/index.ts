@@ -25,4 +25,14 @@ export {
   type RowCell,
   type Table,
 } from './table';
-export { defaultTheme, resolveLineLook, resolveLook, type LineLook, type Look, type Theme } from './theme';
+export {
+  STROKES,
+  defaultTheme,
+  resolveLineLook,
+  resolveLook,
+  type BlockEdges,
+  type LineLook,
+  type Look,
+  type ResolvedLineLook,
+  type Theme,
+} from './theme';
