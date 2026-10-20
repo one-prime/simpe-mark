@@ -20,7 +20,7 @@ export type LinkOpener = (target: LinkTarget, view: EditorView) => void;
 
 /** In a browser: web addresses and paths (resolved like images) open in a new tab. */
 const openInBrowser: LinkOpener = (target, view) => {
-  const url = target.kind === 'web' ? target.url : resolvedUrls(view.state.facet(imageResolver), target.url)[0];
+  const url = target.kind === 'web' ? target.url : resolvedUrls(view.state.facet(imageResolver), target.url)?.[0];
   if (url) window.open(url, '_blank', 'noopener,noreferrer');
 };
 

@@ -12,7 +12,7 @@ import { tableEditing } from './table-commands';
 export { lookCss, markdownDecorations, markdownTheme } from './decorations';
 export { keepLineSeparator } from './line-separator';
 export { followLink, linkOpener, links, type LinkOpener, type LinkTarget } from './links';
-export { imageResolver, previews, type ImageResolver } from './previews';
+export { imageResolver, previews, refreshImages, type ImageResolver } from './previews';
 export { insertRowBelow, nextCell, previousCell, tableEditing } from './table-commands';
 
 /** The SimpleMark language and styling, for hosts that build their own EditorState. */
@@ -38,7 +38,10 @@ export interface EditorOptions {
   theme?: Theme;
   /** Line ending to read and write ("\n", "\r\n"); by default the one `doc` uses. */
   lineSeparator?: string;
-  /** Turns an image path from the document into a URL to load (default: as written). */
+  /**
+   * Turns an image path from the document into a URL to load (default: as written). Return
+   * undefined while the file is still loading, and call `refreshImages(view)` when it has.
+   */
   resolveImage?: ImageResolver;
   /**
    * Opens a followed link (Ctrl/Cmd+Click) or a clicked image preview. Default: web addresses

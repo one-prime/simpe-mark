@@ -9,7 +9,7 @@ import { Decoration, EditorView, WidgetType, hoverTooltip, showTooltip, type Dec
 import type { SyntaxNode } from '@lezer/common';
 import type { MathResult } from '@simple-mark/math';
 import { mathSource, previewBlocks, type ImageSource } from '@simple-mark/model';
-import { imageResolver, resolvedUrls, type ImageResolver } from './image-resolver';
+import { imageResolver, imagesChanged, resolvedUrls, type ImageResolver } from './image-resolver';
 import { lineHeightHints } from './line-heights';
 import { followLink } from './links';
 import { loadMath, loadedMath } from './math-loader';
@@ -27,7 +27,7 @@ import {
   whenImageSized,
 } from './preview-heights';
 
-export { imageResolver, type ImageResolver } from './image-resolver';
+export { imageResolver, refreshImages, type ImageResolver } from './image-resolver';
 
 // ---- math --------------------------------------------------------------------------------------
 
@@ -100,12 +100,16 @@ export interface ImageRef {
   fallbacks?: string[];
   alt: string;
   problem?: string;
+  /** The host is still loading it (see `refreshImages`). */
+  loading?: boolean;
 }
 
 /** An image from the document with its path resolved by the host. */
 function imageRef(image: ImageSource, resolve: ImageResolver): ImageRef {
   if (image.src === null) return { raw: image.raw, src: null, alt: image.alt, problem: `No definition for ${image.raw}` };
-  const [src, ...fallbacks] = resolvedUrls(resolve, image.src);
+  const urls = resolvedUrls(resolve, image.src);
+  if (urls === undefined) return { raw: image.raw, src: null, alt: image.alt, problem: `Loading ${image.raw}…`, loading: true };
+  const [src, ...fallbacks] = urls;
   if (src === undefined) return { raw: image.raw, src: null, alt: image.alt, problem: `Can't load ${image.raw}` };
   return { raw: image.raw, src, ...(fallbacks.length ? { fallbacks } : {}), alt: image.alt };
 }
@@ -144,14 +148,14 @@ class ImageWidget extends WidgetType {
       if (--waiting === 0) rememberHeight(view, this.key, dom);
     };
     for (const image of this.images) {
-      const problem = (text: string) => {
+      const problem = (text: string, className = 'sm-image-error') => {
         const span = document.createElement('span');
-        span.className = 'sm-image-error';
+        span.className = className;
         span.textContent = text;
         return span;
       };
       if (image.src === null) {
-        dom.appendChild(problem(image.problem ?? `Can't load ${image.raw}`));
+        dom.appendChild(problem(image.problem ?? `Can't load ${image.raw}`, image.loading ? 'sm-image-loading' : 'sm-image-error'));
         continue;
       }
       waiting++;
@@ -226,7 +230,7 @@ const blockPreviewField = StateField.define<DecorationSet>({
       tr.docChanged ||
       syntaxTree(tr.state) !== syntaxTree(tr.startState) ||
       tr.state.facet(imageResolver) !== tr.startState.facet(imageResolver) ||
-      tr.effects.some((effect) => effect.is(refreshEstimates));
+      tr.effects.some((effect) => effect.is(refreshEstimates) || effect.is(imagesChanged));
     return changed ? blockPreviews(tr.state) : previews;
   },
   provide: (field) => EditorView.decorations.from(field),
@@ -291,6 +295,7 @@ const previewTheme = EditorView.theme({
   '.sm-image-preview': { display: 'flex', flexWrap: 'wrap', gap: em(PREVIEW_EM.imageGap), padding: previewSpacing },
   '.sm-image-preview img': { maxWidth: '100%', maxHeight: em(PREVIEW_EM.imageMaxHeight), borderRadius: em(PREVIEW_EM.radius) },
   '.sm-image-error, .sm-math-error': { color: '#cf222e', fontSize: '0.9em' },
+  '.sm-image-loading': { color: '#818b98', fontSize: '0.9em' },
   '.sm-math-preview': { textAlign: 'center', padding: previewSpacing, overflowX: 'auto', overflowY: 'hidden' },
   '.sm-math-tooltip': { padding: '6px 10px' },
 });

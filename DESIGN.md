@@ -119,6 +119,11 @@ workspace folder (VS Code's Markdown preview convention) — for drawing and for
 So an `ImageResolver` may return several URLs to try in order; a preview moves to the next one
 when an image fails to load (the first failure shows up as one 404 in the console).
 
+A host that loads files itself (DrawLayout reads them from the project folder) may not have a
+URL yet when the editor asks: the resolver returns `undefined`, the preview says "Loading …",
+and the host calls `refreshImages(view)` when files have loaded. Before, such an image showed
+"Can't load" for the rest of the edit.
+
 ### Canvas: `@simple-mark/canvas`
 
 `layoutMarkdown(text, options)` (no DOM; widths from the host's `measure`) turns text into

@@ -42,6 +42,16 @@ describe('image previews', () => {
       images: [{ src: 'vscode-resource:/docs/img/a.png' }, { src: null, problem: "Can't load https://x.y/b.png" }],
     });
   });
+  it('shows an image as loading while the host is still loading its file', () => {
+    const resolve = (src: string) => (src === 'later.png' ? undefined : null);
+    expect(sources('![a](later.png) ![b](gone.png)', resolve)[0]).toMatchObject({
+      images: [
+        { src: null, loading: true, problem: 'Loading later.png…' },
+        { src: null, problem: "Can't load gone.png" },
+      ],
+    });
+  });
+
   it('keeps further places to try when the host gives several', () => {
     const resolve = (src: string) => (src.startsWith('/') ? [`disk:${src}`, `workspace:${src}`] : src);
     expect(sources('![a](/img/a.png) ![b](b.png)', resolve)[0]).toMatchObject({

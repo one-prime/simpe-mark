@@ -8,9 +8,13 @@
 //   npm run release -- --pack      build and pack .tgz files into dist/release (no publishing)
 //   npm run release -- --dry-run   build and run `npm publish --dry-run`
 //   npm run release                build and publish (npm asks for your 2FA confirmation)
+//
+// npm can accept a publish (202) and make the version visible only minutes later, after it
+// has processed it ("staged"). Until then a rerun can't see it and gets a 409 "Cannot publish
+// over previously staged version": that is reported as still processing, not as a failure.
 
-import { execFileSync } from 'node:child_process';
-import { copyFileSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { execFileSync, spawn } from 'node:child_process';
+import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { build } from 'tsdown';
 
@@ -30,7 +34,32 @@ function isPublished(name, version) {
     return false; // not found (404): not published
   }
 }
+/**
+ * Runs `npm publish`, showing everything npm prints (its 2FA prompt included). Resolves to
+ * 'processing' when npm already has this version and is still processing it.
+ */
+function publish(args) {
+  return new Promise((resolve, reject) => {
+    const child = spawn('npm', ['publish', ...args], { stdio: ['inherit', 'inherit', 'pipe'] });
+    let errors = '';
+    child.stderr.on('data', (chunk) => {
+      process.stderr.write(chunk);
+      errors += chunk;
+    });
+    child.on('error', reject);
+    child.on('close', (code) => {
+      if (code === 0) resolve('published');
+      else if (/previously staged version/.test(errors)) resolve('processing');
+      else reject(new Error(`npm publish ${args.join(' ')} failed (exit ${code})`));
+    });
+  });
+}
+
 const versions = Object.fromEntries(PACKAGES.map((name) => [`@simple-mark/${name}`, read(join(root, 'packages', name, 'package.json')).version]));
+
+// Only this version's packs: npm would pick any older ones left there too.
+if (mode === 'pack') rmSync(join(root, 'dist/release'), { recursive: true, force: true });
+const processing = [];
 
 for (const name of PACKAGES) {
   const dir = join(root, 'packages', name);
@@ -86,7 +115,13 @@ for (const name of PACKAGES) {
     const out = join(root, 'dist/release');
     mkdirSync(out, { recursive: true });
     execFileSync('npm', ['pack', dist, '--pack-destination', out], { stdio: 'inherit' });
-  } else {
-    execFileSync('npm', ['publish', dist, '--access', 'public', ...(mode === 'dry-run' ? ['--dry-run'] : [])], { stdio: 'inherit' });
+  } else if ((await publish([dist, '--access', 'public', ...(mode === 'dry-run' ? ['--dry-run'] : [])])) === 'processing') {
+    processing.push(`${pkg.name}@${pkg.version}`);
   }
 }
+
+if (processing.length) {
+  console.log(`\nnpm is still processing ${processing.join(', ')} from an earlier run; it goes live by itself.`);
+  console.log('If it doesn\'t within an hour, check `npx npm@latest stage list <package>` or the Staged Packages tab on npmjs.com.');
+}
+if (mode === 'publish') console.log('\nPublished versions can take a few minutes to show on npm: no need to run this again.');
