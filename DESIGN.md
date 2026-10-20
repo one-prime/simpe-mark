@@ -82,6 +82,18 @@ packages/
 (DrawLayout)   draws model output with Canvas 2D; mounts the CM6 editor to edit
 ```
 
+### Publishing: the `simple-mark` npm package
+
+Public on npm as one package with subpaths: `simple-mark/model`, `simple-mark/math`,
+`simple-mark/codemirror` (and `simple-mark/canvas` once it exists).
+`packages/simple-mark` is only the publish wrapper: tsdown bundles the workspace packages
+into `dist/` (ESM + `.d.ts`), shares common code in chunks, keeps the third-party
+libraries (CodeMirror, Lezer, MathJax) as `dependencies`, and keeps MathJax lazy
+(`import('./math.js')`, font parts as separate imports). Build: `npm run build:package`.
+Checked by installing the packed `.tgz` into an empty project (TypeScript 5 typecheck with
+library checks, Vite build, browser run with lazy math). Other projects (DrawLayout) use the
+published package; the name `simplemark` on npm belongs to an unrelated library.
+
 ### VS Code
 
 - `CustomTextEditorProvider` + webview running the editor.

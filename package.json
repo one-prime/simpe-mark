@@ -9,7 +9,8 @@
   "scripts": {
     "dev": "npm run dev -w @simplemark/codemirror",
     "typecheck": "tsc -p packages/model/tsconfig.json && tsc -p packages/math/tsconfig.json && tsc -p tsconfig.json && tsc -p packages/vscode/tsconfig.json && tsc -p packages/vscode/tsconfig.webview.json && tsc -p tsconfig.test.json",
-    "test": "vitest run"
+    "test": "vitest run",
+    "build:package": "npm run build -w simple-mark"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",
