@@ -33,6 +33,8 @@ export interface EditorOptions {
   doc?: string;
   readOnly?: boolean;
   theme?: Theme;
+  /** Line ending to read and write ("\n", "\r\n"); by default the one `doc` uses. */
+  lineSeparator?: string;
   /** Turns an image path from the document into a URL to load (default: as written). */
   resolveImage?: ImageResolver;
   /** Off when the host owns undo (VS Code). */
@@ -51,7 +53,7 @@ export function createEditor(parent: HTMLElement, options: EditorOptions = {}): 
     state: EditorState.create({
       doc,
       extensions: [
-        keepLineSeparator(doc),
+        options.lineSeparator ? EditorState.lineSeparator.of(options.lineSeparator) : keepLineSeparator(doc),
         useHistory ? history() : [],
         keymap.of([...defaultKeymap, ...(useHistory ? historyKeymap : [])]),
         EditorView.lineWrapping,

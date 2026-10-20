@@ -1,7 +1,17 @@
 {
   "extends": "./tsconfig.base.json",
   "compilerOptions": {
-    "lib": ["ES2022", "DOM", "DOM.Iterable"]
+    "lib": [
+      "ES2022",
+      "DOM",
+      "DOM.Iterable"
+    ]
   },
-  "include": ["packages/*/src", "packages/*/demo"]
+  "include": [
+    "packages/*/src",
+    "packages/*/demo"
+  ],
+  "exclude": [
+    "packages/vscode"
+  ]
 }

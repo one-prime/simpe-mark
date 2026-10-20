@@ -89,6 +89,17 @@ packages/
   external changes → pushed to webview.
 - VS Code owns undo/redo (CM6 history disabled in this host).
 - Images resolved via `webview.asWebviewUri()`; theme from `--vscode-*` CSS vars.
+- Positions travel as line/character, never offsets: CodeMirror counts `\r\n`
+  as one character, VS Code as two. The host sends the document's EOL and the
+  editor uses it (also for new, empty files).
+- Echo and races: the host doesn't echo changes while applying the webview's
+  edit; the webview ignores host updates while its own edits are unacknowledged
+  and asks for the full text afterwards; host text is merged as one minimal
+  change (never splitting `\r\n` or surrogate pairs).
+- Layout for a later repo split: `src/extension.ts` (host, esbuild → CJS),
+  `src/webview/` (Vite, lazy MathJax chunks), `src/html.ts` / `protocol.ts` /
+  `sync.ts` (no VS Code or DOM, shared and testable). Its only tie to this repo
+  is the `@simplemark/codemirror` / `@simplemark/model` dependency.
 
 ### DrawLayout (Markdown text)
 
@@ -127,7 +138,14 @@ overlay layer would be missing from both and break z-order.
    `packages/math` renders TeX to SVG (MathJax 4, no DOM); previews of images
    and `$$` blocks below their lines, inline math in a tooltip (cursor inside or
    hover); errors shown as text; hosts resolve image paths (`resolveImage`).
-4. VS Code extension.
+4. ✅ VS Code extension (`packages/vscode`, built to move to its own repo later):
+   custom text editor for `*.md` / `*.markdown`, the default editor for them
+   (manifest `priority: "default"`; "Open as Text" switches back); webview
+   synced with the TextDocument; VS Code theme colors; images from the
+   document's folder/workspace/https. Checked: unit tests, the built webview in
+   Chromium under the extension's own CSP with a fake host (`npm run smoke`), a
+   packaged `.vsix`, activation against a stub `vscode`. Not yet checked inside
+   real VS Code.
 5. DrawLayout: `textFormat`, canvas drawing of `model` output, CM6 editing overlay.
 
 ## Findings
