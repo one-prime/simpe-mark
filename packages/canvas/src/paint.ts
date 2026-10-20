@@ -18,6 +18,9 @@ const PLACEHOLDER = 'rgba(129, 139, 152, 0.15)';
  * the layout's estimate where a browser doesn't give font metrics.
  */
 function baseline(ctx: CanvasRenderingContext2D, run: { top: number; height: number; textTop: number; fontSize: number }): { y: number; alphabetic: boolean } {
+  // Font metrics are measured from the current textBaseline: measure from the alphabetic one,
+  // whatever the caller's canvas was left at (a host drawing plain text with "top", say).
+  ctx.textBaseline = 'alphabetic';
   const metrics = ctx.measureText('x');
   const ascent = metrics.fontBoundingBoxAscent;
   const descent = metrics.fontBoundingBoxDescent;
