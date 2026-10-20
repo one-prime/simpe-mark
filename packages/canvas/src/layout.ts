@@ -58,6 +58,11 @@ export interface TextRun {
   height: number;
   textTop: number;
   font: string;
+  /**
+   * The line's own font (without inline styles). Its metrics give the baseline every run on the
+   * line sits on, as in a browser, where inline code in another font shares the line's baseline.
+   */
+  lineFont: string;
   fontSize: number;
   color: string;
   /** Behind this text only (inline code). */
@@ -213,6 +218,7 @@ export function layoutMarkdown(source: string, options: LayoutOptions): Markdown
     const lineHeight = style.lineHeight * style.fontSize * scale;
     const textTop = (lineHeight - style.fontSize * scale) / 2;
     const indent = lineLook.borderLeft ? EM.quoteIndent * style.fontSize : 0;
+    const lineFont = fontOf(resolveLook(styles, [], theme), style, theme, scale);
     const table = styles.includes('table');
     const available = wrapWidth - indent;
 
@@ -300,6 +306,7 @@ export function layoutMarkdown(source: string, options: LayoutOptions): Markdown
             height: lineHeight,
             textTop: y + textTop,
             font,
+            lineFont,
             fontSize: style.fontSize * scale,
             color: look.color ?? style.color,
             ...(look.background ? { background: look.background } : {}),

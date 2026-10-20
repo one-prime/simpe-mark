@@ -14,13 +14,14 @@ const PLACEHOLDER = 'rgba(129, 139, 152, 0.15)';
 
 /**
  * Where text sits in its line, as a browser places it: the line's extra height (half-leading)
- * split above and below the font's ascent + descent, the glyphs on the baseline. Falls back to
- * the layout's estimate where a browser doesn't give font metrics.
+ * split above and below the ascent + descent of the line's font, every run on that baseline.
+ * Falls back to the layout's estimate where a browser doesn't give font metrics.
  */
-function baseline(ctx: CanvasRenderingContext2D, run: { top: number; height: number; textTop: number; fontSize: number }): { y: number; alphabetic: boolean } {
+function baseline(ctx: CanvasRenderingContext2D, run: { top: number; height: number; textTop: number; lineFont: string }): { y: number; alphabetic: boolean } {
   // Font metrics are measured from the current textBaseline: measure from the alphabetic one,
   // whatever the caller's canvas was left at (a host drawing plain text with "top", say).
   ctx.textBaseline = 'alphabetic';
+  ctx.font = run.lineFont;
   const metrics = ctx.measureText('x');
   const ascent = metrics.fontBoundingBoxAscent;
   const descent = metrics.fontBoundingBoxDescent;
@@ -44,8 +45,8 @@ export function paintMarkdown(ctx: CanvasRenderingContext2D, layout: MarkdownLay
   }
 
   for (const run of layout.runs) {
-    ctx.font = run.font;
     const { y, alphabetic } = baseline(ctx, run);
+    ctx.font = run.font;
     ctx.textBaseline = alphabetic ? 'alphabetic' : 'top';
     if (run.background) {
       ctx.fillStyle = run.background;

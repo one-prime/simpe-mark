@@ -176,10 +176,15 @@ class MarkdownDecorations {
     if (!deco) {
       // Line properties come from the line decoration; spans only set what they change.
       const linked = styles.includes('link') || styles.includes('url');
+      const look = resolveLook([], styles, this.theme);
+      // Text in another font (inline code) would make the browser grow the line to fit that
+      // font's ascent and descent. Lines keep their height and the line's baseline instead, as
+      // @simple-mark/canvas lays them out; the span's background is unchanged.
+      const keepLine = look.monospace !== undefined || look.fontScale !== undefined;
       deco = Decoration.mark({
         class: styles.map((s) => `sm-${s}`).join(' '),
         attributes: {
-          style: lookCss(resolveLook([], styles, this.theme), this.theme),
+          style: lookCss(look, this.theme) + (keepLine ? '; line-height: 0' : ''),
           ...(linked ? { title: `${followKeyName}+Click to open` } : {}),
         },
       });

@@ -122,7 +122,14 @@ const heightHints = StateField.define<DecorationSet>({
   provide: (field) => EditorView.decorations.from(field),
 });
 
+// CodeMirror puts a 1em image (cm-widgetBuffer) after an inline widget, on the baseline. With a
+// tight line height (1.25 at heading size) it reaches above the line and makes it taller than
+// the line height. From the top of the line, it fits any line height of 1 or more.
+const hintTheme = EditorView.baseTheme({
+  '.sm-height-hint + .cm-widgetBuffer': { verticalAlign: 'top' },
+});
+
 /** Better height estimates for headings and wrapping lines that are not drawn yet. */
 export function lineHeightHints(): Extension {
-  return heightHints;
+  return [heightHints, hintTheme];
 }

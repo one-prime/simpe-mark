@@ -133,6 +133,13 @@ font size matches the editor at 15px. What gets previewed below which line
 Side-by-side check (`npm run dev -w @simple-mark/canvas`): formula 212.7×50.2 vs
 214.3×50.5 px, total vertical drift 1.6 px over 936 px.
 
+Every line is exactly line height × font size, and all runs on a line share the baseline of
+the line's own font (`TextRun.lineFont`). The editor keeps to that: a browser grows a line
+to fit inline text in another font (inline code), so such spans get `line-height: 0`, and
+the 1em `cm-widgetBuffer` image CodeMirror puts after the height-hint widget is aligned to
+the line's top (on the baseline it stuck out above headings at line height 1.25). Before,
+DrawLayout's editing overlay drifted 3–4 px below the canvas text further down a block.
+
 ### VS Code
 
 - `CustomTextEditorProvider` + webview running the editor.

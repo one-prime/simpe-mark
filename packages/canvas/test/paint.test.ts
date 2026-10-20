@@ -17,7 +17,9 @@ function recordingCanvas(textBaseline: CanvasTextBaseline) {
     fillRect() {},
     measureText(text: string) {
       const top = this.textBaseline === 'top';
-      return { width: text.length * 10, fontBoundingBoxAscent: top ? 0.1 : 16, fontBoundingBoxDescent: top ? 20 : 4 };
+      // A monospace font with other metrics, like inline code in a real font.
+      const mono = this.font.includes('monospace');
+      return { width: text.length * 10, fontBoundingBoxAscent: top ? 0.1 : mono ? 12 : 16, fontBoundingBoxDescent: top ? 20 : mono ? 8 : 4 };
     },
     fillText(text: string, _x: number, y: number) {
       drawn.push({ text, y, baseline: this.textBaseline });
@@ -40,5 +42,18 @@ describe('paintMarkdown', () => {
       expect(new Set(drawn.map((d) => d.y)).size).toBe(1);
       expect(drawn.every((d) => d.baseline === 'alphabetic')).toBe(true);
     }
+  });
+
+  it('puts inline code on the baseline of the line, like a browser', () => {
+    const layout = layoutMarkdown('the `key` is', {
+      width: 400,
+      style: { fontFamily: 'sans-serif', fontSize: 20, fontWeight: 400, lineHeight: 1.5, color: '#000' },
+      measure: (text) => text.length * 10,
+    });
+    const { ctx, drawn } = recordingCanvas('alphabetic');
+    paintMarkdown(ctx, layout);
+    expect(drawn.map((d) => d.text)).toEqual(['the ', '`', 'key', '`', ' is']);
+    // Line 30 high, sans-serif 16 + 4: the baseline 5 + 16 from the top, for every run.
+    expect(drawn.map((d) => d.y)).toEqual([21, 21, 21, 21, 21]);
   });
 });
