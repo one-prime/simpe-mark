@@ -1,4 +1,4 @@
-import { defaultTheme } from '@simplemark/model';
+import { defaultTheme } from '@simple-mark/model';
 import { createEditor } from '../src/index';
 import { recordScrolling } from './debug';
 

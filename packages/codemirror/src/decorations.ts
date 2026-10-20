@@ -6,7 +6,7 @@
 import { syntaxTree } from '@codemirror/language';
 import { Facet, type EditorState, type Line, type Range } from '@codemirror/state';
 import { Decoration, ViewPlugin, type DecorationSet, type EditorView, type ViewUpdate } from '@codemirror/view';
-import { charWidth, defaultTheme, markdownStyles, resolveLineLook, resolveLook, type BlockStyle, type InlineStyle, type LineLook, type Theme } from '@simplemark/model';
+import { charWidth, defaultTheme, markdownStyles, resolveLineLook, resolveLook, type BlockStyle, type InlineStyle, type LineLook, type Theme } from '@simple-mark/model';
 
 /** The theme the editor draws with. */
 export const markdownTheme = Facet.define<Theme, Theme>({ combine: (values) => values[0] ?? defaultTheme });

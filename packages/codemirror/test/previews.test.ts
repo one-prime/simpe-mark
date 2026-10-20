@@ -1,6 +1,6 @@
 import { commonmarkLanguage, markdown } from '@codemirror/lang-markdown';
 import { EditorState } from '@codemirror/state';
-import { markdownExtensions } from '@simplemark/model';
+import { markdownExtensions } from '@simple-mark/model';
 import { describe, expect, it } from 'vitest';
 import { blockPreviewSources, imageResolver, type ImageResolver } from '../src/previews';
 

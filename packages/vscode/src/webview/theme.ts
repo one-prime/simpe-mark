@@ -2,7 +2,7 @@
 // editor follows light, dark and high-contrast themes and theme switches.
 
 import { EditorView } from '@codemirror/view';
-import { defaultTheme, type Theme } from '@simplemark/model';
+import { defaultTheme, type Theme } from '@simple-mark/model';
 
 const dim = 'var(--vscode-descriptionForeground)';
 const codeBackground = 'var(--vscode-textCodeBlock-background)';

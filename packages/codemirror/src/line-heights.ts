@@ -14,7 +14,7 @@
 
 import { StateField, type EditorState, type Extension, type Range } from '@codemirror/state';
 import { Decoration, EditorView, WidgetType, type DecorationSet } from '@codemirror/view';
-import type { Theme } from '@simplemark/model';
+import type { Theme } from '@simple-mark/model';
 import { markdownTheme } from './decorations';
 import { layoutFacts, refreshEstimates } from './preview-heights';
 

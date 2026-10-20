@@ -2,7 +2,7 @@ import { defaultKeymap, history, historyKeymap } from '@codemirror/commands';
 import { commonmarkLanguage, markdown } from '@codemirror/lang-markdown';
 import { EditorState, type Extension } from '@codemirror/state';
 import { EditorView, keymap, type ViewUpdate } from '@codemirror/view';
-import { defaultTheme, markdownExtensions, type Theme } from '@simplemark/model';
+import { defaultTheme, markdownExtensions, type Theme } from '@simple-mark/model';
 import { markdownDecorations, markdownTheme } from './decorations';
 import { keepLineSeparator } from './line-separator';
 import { imageResolver, previews, type ImageResolver } from './previews';

@@ -4,7 +4,7 @@
 
 import { Annotation } from '@codemirror/state';
 import { EditorView } from '@codemirror/view';
-import { createEditor } from '@simplemark/codemirror';
+import { createEditor } from '@simple-mark/codemirror';
 import type { Edit, HostMessage, WebviewMessage } from '../protocol';
 import { diffText, offsetToLineCh } from '../sync';
 import { vscodeChrome, vscodeTheme } from './theme';

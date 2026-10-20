@@ -1,5 +1,5 @@
 {
-  "name": "@simplemark/codemirror",
+  "name": "@simple-mark/codemirror",
   "version": "0.1.0",
   "private": true,
   "type": "module",
@@ -17,7 +17,7 @@
     "@codemirror/state": "^6.7.6",
     "@codemirror/view": "^6.43.15",
     "@lezer/common": "^1.5.3",
-    "@simplemark/math": "*",
-    "@simplemark/model": "*"
+    "@simple-mark/math": "*",
+    "@simple-mark/model": "*"
   }
 }

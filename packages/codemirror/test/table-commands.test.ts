@@ -1,6 +1,6 @@
 import { commonmarkLanguage, markdown } from '@codemirror/lang-markdown';
 import { EditorState, type StateCommand, type Transaction } from '@codemirror/state';
-import { markdownExtensions } from '@simplemark/model';
+import { markdownExtensions } from '@simple-mark/model';
 import { describe, expect, it } from 'vitest';
 import { keepLineSeparator } from '../src/line-separator';
 import { insertRowBelow, nextCell, previousCell, tableEditing } from '../src/table-commands';

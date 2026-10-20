@@ -1,12 +1,12 @@
-// MathJax is large, so @simplemark/math loads the first time a document has math.
+// MathJax is large, so @simple-mark/math loads the first time a document has math.
 
-type MathModule = typeof import('@simplemark/math');
+type MathModule = typeof import('@simple-mark/math');
 
 let loaded: MathModule | undefined;
 let loading: Promise<MathModule> | undefined;
 
 export function loadMath(): Promise<MathModule> {
-  loading ??= import('@simplemark/math').then((m) => (loaded = m));
+  loading ??= import('@simple-mark/math').then((m) => (loaded = m));
   return loading;
 }
 

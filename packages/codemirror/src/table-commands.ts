@@ -7,7 +7,7 @@ import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import { EditorState, Prec, type Extension, type StateCommand, type Transaction } from '@codemirror/state';
 import { EditorView, ViewPlugin, keymap } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
-import { cellAt, parseTable, renderTable, rowLine, type Table } from '@simplemark/model';
+import { cellAt, parseTable, renderTable, rowLine, type Table } from '@simple-mark/model';
 
 interface TableLine {
   /** Start of the document line, including any prefix such as "> " or list indentation. */

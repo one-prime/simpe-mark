@@ -1,13 +1,13 @@
 // Previews that never replace the source: images and $$ blocks are drawn below their lines,
 // inline $math$ in a tooltip while the cursor is in it or the mouse is over it. Math is
-// rendered by @simplemark/math, loaded the first time a document has math. Heights of previews
+// rendered by @simple-mark/math, loaded the first time a document has math. Heights of previews
 // not drawn yet are estimated in preview-heights.ts.
 
 import { syntaxTree } from '@codemirror/language';
 import { Facet, StateField, type EditorState, type Extension, type Range } from '@codemirror/state';
 import { Decoration, EditorView, WidgetType, hoverTooltip, showTooltip, type DecorationSet, type Tooltip } from '@codemirror/view';
 import type { SyntaxNode, Tree } from '@lezer/common';
-import type { MathResult } from '@simplemark/math';
+import type { MathResult } from '@simple-mark/math';
 import { lineHeightHints } from './line-heights';
 import { loadMath, loadedMath } from './math-loader';
 import {

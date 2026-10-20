@@ -82,17 +82,22 @@ packages/
 (DrawLayout)   draws model output with Canvas 2D; mounts the CM6 editor to edit
 ```
 
-### Publishing: the `simple-mark` npm package
+### Publishing: `@simple-mark/*` on npm
 
-Public on npm as one package with subpaths: `simple-mark/model`, `simple-mark/math`,
-`simple-mark/codemirror` (and `simple-mark/canvas` once it exists).
-`packages/simple-mark` is only the publish wrapper: tsdown bundles the workspace packages
-into `dist/` (ESM + `.d.ts`), shares common code in chunks, keeps the third-party
-libraries (CodeMirror, Lezer, MathJax) as `dependencies`, and keeps MathJax lazy
-(`import('./math.js')`, font parts as separate imports). Build: `npm run build:package`.
-Checked by installing the packed `.tgz` into an empty project (TypeScript 5 typecheck with
-library checks, Vite build, browser run with lazy math). Other projects (DrawLayout) use the
-published package; the name `simplemark` on npm belongs to an unrelated library.
+Public on npm under the org `@simple-mark`: `@simple-mark/model`, `@simple-mark/math`,
+`@simple-mark/codemirror` (and `@simple-mark/canvas` once it exists). The unscoped name
+`simple-mark` was refused by npm as too similar to the existing `simplemark` package.
+
+In the repo, each package exports its TypeScript source (the workspace, Vite and the tests
+use it directly). `npm run release` (`scripts/release.mjs`) builds each with tsdown into
+`packages/<name>/dist`, writes a publish-ready `package.json` there (exports to the built
+files, `@simple-mark/*` dependencies at the current version, everything else external), copies
+the package README and the license, and publishes in dependency order (model, math,
+codemirror). `-- --pack` makes `.tgz` files in `dist/release`, `-- --dry-run` checks.
+Side-effect imports are stripped from the `.d.ts` files: they carry no types and would pull
+MathJax's own types, which fail strict checks, into users' type checking. Checked by
+installing the three `.tgz` files into an empty project (TypeScript 5 strict with library
+checks, Vite build, browser run with lazy math). npm publishing needs 2FA on the account.
 
 ### VS Code
 
