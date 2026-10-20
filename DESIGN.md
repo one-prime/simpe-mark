@@ -144,6 +144,21 @@ overlay layer would be missing from both and break z-order.
   Korean IME composition inside those boxes was checked with Chromium's IME
   emulation, not yet with a real IME. The canvas renderer should do the same:
   draw each wide character centered in two columns.
+- IME (Korean): while a syllable is still being composed, CodeMirror skips its
+  keymaps, so Enter/Tab never reach the table commands. The browser then
+  inserts a raw line break itself (sometimes before the composing syllable,
+  splitting the row), and Tab moves focus out of the editor. Fixes: any typed
+  line break inside a table (not paste/drop) is turned into "add a row below"
+  with the typed text kept in its cell; Tab during composition is taken in the
+  capture phase and runs after the IME commits. Reproduced and verified with
+  Chromium's IME emulation.
+- With a real IME (ibus, Korean), a syllable typed in a table landed on a stray
+  line of its own — without any Enter. Likely cause: the wide-character boxes
+  wrapped the text while it was being composed, changing the DOM under the IME.
+  So the boxes are never drawn on a line holding a cursor; that row is aligned
+  again as soon as the cursor leaves it (it isn't re-padded before Tab/Enter
+  anyway). Rule for future decorations: never change DOM structure (wrappers,
+  inline boxes) on the cursor's line; classes and styles are fine.
 - GFM reads a text line directly below a table as another row, so leaving a
   table needs a blank line in between.
 - Lezer puts a quoted table's `>` markers inside the Table node, between rows.

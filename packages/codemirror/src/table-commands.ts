@@ -1,10 +1,11 @@
 // Table editing: Tab / Shift-Tab move between cells and Enter adds a row. Each command
 // re-aligns the whole table in the same transaction, so it is one undo step. Outside a
-// table the commands return false and the keys keep their normal meaning.
+// table the commands return false and the keys keep their normal meaning. IME composition
+// (Korean) needs extra care: see lineBreakToRow and tabWhileComposing.
 
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
-import { Prec, type EditorState, type Extension, type StateCommand } from '@codemirror/state';
-import { keymap } from '@codemirror/view';
+import { EditorState, Prec, type Extension, type StateCommand, type Transaction } from '@codemirror/state';
+import { EditorView, ViewPlugin, keymap } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
 import { cellAt, parseTable, renderTable, rowLine, type Table } from '@simplemark/model';
 
@@ -145,12 +146,84 @@ export const insertRowBelow: StateCommand = ({ state, dispatch }) => {
   return true;
 };
 
-/** The table keys, ahead of the default and Markdown keymaps. Off while an IME is composing. */
-export function tableKeymap(): Extension {
-  return Prec.high(
-    keymap.of([
-      { key: 'Tab', run: (view) => !view.composing && nextCell(view), shift: (view) => !view.composing && previousCell(view) },
-      { key: 'Enter', run: (view) => !view.composing && insertRowBelow(view) },
-    ]),
-  );
+/**
+ * A typed line break inside a table becomes "add a row below". This catches the line breaks
+ * the Enter command never sees: while an IME is composing (Korean: Enter right after a
+ * syllable), CodeMirror skips its keymaps and the browser inserts the break itself, sometimes
+ * before the syllable still being composed. The typed text stays in its cell.
+ */
+const lineBreakToRow = EditorState.transactionFilter.of((tr) => {
+  if (!tr.docChanged || !tr.isUserEvent('input') || tr.isUserEvent('input.paste') || tr.isUserEvent('input.drop') || tr.isUserEvent('input.table')) {
+    return tr;
+  }
+  const { startState } = tr;
+  const kept: { from: number; to: number; insert: string }[] = [];
+  let breakAt: { from: number; offset: number } | null = null;
+  let other = false;
+  tr.changes.iterChanges((fromA, toA, _fromB, _toB, inserted) => {
+    const removedBreaks = startState.doc.lineAt(toA).number - startState.doc.lineAt(fromA).number;
+    const lines = inserted.toJSON();
+    if (removedBreaks === 0 && lines.length === 2 && !breakAt) {
+      breakAt = { from: fromA, offset: lines[0]!.length };
+      kept.push({ from: fromA, to: toA, insert: lines.join('') });
+    } else if (lines.length - 1 !== removedBreaks) {
+      other = true;
+    } else {
+      kept.push({ from: fromA, to: toA, insert: inserted.sliceString(0, inserted.length, startState.lineBreak) });
+    }
+  });
+  const at = breakAt as { from: number; offset: number } | null;
+  if (!at || other) return tr;
+  const withoutBreak = startState.changes(kept);
+  const pos = withoutBreak.mapPos(at.from, -1) + at.offset;
+  const state = startState.update({ changes: withoutBreak, selection: { anchor: pos } }).state;
+  let row: Transaction | null = null;
+  if (!insertRowBelow({ state, dispatch: (t) => (row = t) })) return tr;
+  const done = row as Transaction | null;
+  return { changes: withoutBreak.compose(done!.changes), selection: done!.selection, scrollIntoView: true, userEvent: 'input.table' };
+});
+
+/**
+ * Tab while an IME is composing: CodeMirror skips its keymaps then, and the browser would move
+ * the focus out of the editor. Take the key, let the IME commit, then move to the cell.
+ */
+const tabWhileComposing = ViewPlugin.fromClass(
+  class {
+    constructor(readonly view: EditorView) {
+      view.dom.addEventListener('keydown', this.onKeydown, true);
+    }
+
+    destroy(): void {
+      this.view.dom.removeEventListener('keydown', this.onKeydown, true);
+    }
+
+    onKeydown = (event: KeyboardEvent): void => {
+      const { view } = this;
+      if (event.key !== 'Tab' || event.ctrlKey || event.altKey || event.metaKey) return;
+      if (!(event.isComposing || event.keyCode === 229 || view.compositionStarted) || !tableAt(view.state)) return;
+      event.preventDefault();
+      event.stopPropagation();
+      const command = event.shiftKey ? previousCell : nextCell;
+      const start = Date.now();
+      const run = () => {
+        if (!view.compositionStarted) command(view);
+        else if (Date.now() - start < 1000) setTimeout(run, 20);
+      };
+      setTimeout(run, 0);
+    };
+  },
+);
+
+/** Table editing keys, ahead of the default and Markdown keymaps, and their IME counterparts. */
+export function tableEditing(): Extension {
+  return [
+    Prec.high(
+      keymap.of([
+        { key: 'Tab', run: nextCell, shift: previousCell },
+        { key: 'Enter', run: insertRowBelow },
+      ]),
+    ),
+    lineBreakToRow,
+    tabWhileComposing,
+  ];
 }

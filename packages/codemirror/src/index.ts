@@ -6,18 +6,18 @@ import { defaultTheme, markdownExtensions, type Theme } from '@simplemark/model'
 import { markdownDecorations, markdownTheme } from './decorations';
 import { keepLineSeparator } from './line-separator';
 import { imageResolver, previews, type ImageResolver } from './previews';
-import { tableKeymap } from './table-commands';
+import { tableEditing } from './table-commands';
 
 export { lookCss, markdownDecorations, markdownTheme } from './decorations';
 export { keepLineSeparator } from './line-separator';
 export { imageResolver, previews, type ImageResolver } from './previews';
-export { insertRowBelow, nextCell, previousCell, tableKeymap } from './table-commands';
+export { insertRowBelow, nextCell, previousCell, tableEditing } from './table-commands';
 
 /** The SimpleMark language and styling, for hosts that build their own EditorState. */
 export function simpleMark(theme: Theme = defaultTheme): Extension {
   return [
     // Before markdown(): its Enter (continue list/quote markup) has the same precedence.
-    tableKeymap(),
+    tableEditing(),
     markdown({ base: commonmarkLanguage, extensions: markdownExtensions, completeHTMLTags: false }),
     markdownTheme.of(theme),
     markdownDecorations,

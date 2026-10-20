@@ -4,7 +4,7 @@
 // are added as well, for host CSS and tests.
 
 import { syntaxTree } from '@codemirror/language';
-import { Facet, type Line, type Range } from '@codemirror/state';
+import { Facet, type EditorState, type Line, type Range } from '@codemirror/state';
 import { Decoration, ViewPlugin, type DecorationSet, type EditorView, type ViewUpdate } from '@codemirror/view';
 import { charWidth, defaultTheme, markdownStyles, resolveLineLook, resolveLook, type BlockStyle, type InlineStyle, type LineLook, type Theme } from '@simplemark/model';
 
@@ -49,6 +49,11 @@ function cjkFitsColumns(family: string): boolean {
   return fits;
 }
 
+/** The lines holding a cursor, as a comparable string. */
+function cursorLinesKey(state: EditorState): string {
+  return state.selection.ranges.map((r) => state.doc.lineAt(r.head).from).join(',');
+}
+
 class MarkdownDecorations {
   decorations: DecorationSet;
   private theme: Theme;
@@ -67,7 +72,12 @@ class MarkdownDecorations {
       this.theme = theme;
       this.fixWide = !cjkFitsColumns(theme.monospaceFamily);
       this.cache.clear();
-    } else if (!update.docChanged && !update.viewportChanged && syntaxTree(update.state) === syntaxTree(update.startState)) {
+    } else if (
+      !update.docChanged &&
+      !update.viewportChanged &&
+      syntaxTree(update.state) === syntaxTree(update.startState) &&
+      !(this.fixWide && update.selectionSet && cursorLinesKey(update.state) !== cursorLinesKey(update.startState))
+    ) {
       return;
     }
     this.decorations = this.build(update.view);
@@ -97,7 +107,13 @@ class MarkdownDecorations {
     for (const [lineFrom, styles] of lines) ranges.push(this.lineDecoration([...styles]).range(lineFrom));
     for (const span of spans) ranges.push(this.markDecoration(span.styles).range(span.from, span.to));
     if (this.fixWide) {
-      for (const [lineFrom, styles] of lines) if (styles.has('table')) this.wideRuns(doc.lineAt(lineFrom), ranges);
+      // Not on lines with a cursor: wrapping text in boxes while an IME composes there makes
+      // the browser (Firefox with a Korean IME) drop the composed text onto a stray line. The
+      // row being typed in is re-aligned on Tab/Enter anyway.
+      const cursorLines = new Set(view.state.selection.ranges.map((r) => doc.lineAt(r.head).from));
+      for (const [lineFrom, styles] of lines) {
+        if (styles.has('table') && !cursorLines.has(lineFrom)) this.wideRuns(doc.lineAt(lineFrom), ranges);
+      }
     }
     return Decoration.set(ranges, true);
   }
