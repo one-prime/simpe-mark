@@ -1,12 +1,27 @@
 // Previews that never replace the source: images and $$ blocks are drawn below their lines,
 // inline $math$ in a tooltip while the cursor is in it or the mouse is over it. Math is
-// rendered by @simplemark/math, loaded the first time a document has math.
+// rendered by @simplemark/math, loaded the first time a document has math. Heights of previews
+// not drawn yet are estimated in preview-heights.ts.
 
 import { syntaxTree } from '@codemirror/language';
 import { Facet, StateField, type EditorState, type Extension, type Range } from '@codemirror/state';
 import { Decoration, EditorView, WidgetType, hoverTooltip, showTooltip, type DecorationSet, type Tooltip } from '@codemirror/view';
 import type { SyntaxNode, Tree } from '@lezer/common';
 import type { MathResult } from '@simplemark/math';
+import { lineHeightHints } from './line-heights';
+import { loadMath, loadedMath } from './math-loader';
+import {
+  PREVIEW_PADDING,
+  imagesEstimate,
+  knownImageSize,
+  mathEstimate,
+  previewLayout,
+  refreshEstimates,
+  rememberHeight,
+  reserveImageBox,
+  watchImage,
+  whenImageSized,
+} from './preview-heights';
 
 /** Turns an image path as written in the document into a URL to load, or null if it can't. */
 export type ImageResolver = (src: string) => string | null;
@@ -15,15 +30,6 @@ export type ImageResolver = (src: string) => string | null;
 export const imageResolver = Facet.define<ImageResolver, ImageResolver>({ combine: (values) => values[0] ?? ((src) => src) });
 
 // ---- math --------------------------------------------------------------------------------------
-
-type MathModule = typeof import('@simplemark/math');
-let mathModule: MathModule | undefined;
-let mathLoading: Promise<MathModule> | undefined;
-
-function loadMath(): Promise<MathModule> {
-  mathLoading ??= import('@simplemark/math').then((m) => (mathModule = m));
-  return mathLoading;
-}
 
 /** Fills `dom` with rendered math now if known, otherwise when it is ready. */
 function renderInto(dom: HTMLElement, tex: string, display: boolean, onDone?: () => void): void {
@@ -37,7 +43,7 @@ function renderInto(dom: HTMLElement, tex: string, display: boolean, onDone?: ()
     }
     onDone?.();
   };
-  const known = mathModule?.cachedMath(tex, display);
+  const known = loadedMath()?.cachedMath(tex, display);
   if (known) return show(known);
   dom.textContent = '…';
   void loadMath()
@@ -46,18 +52,39 @@ function renderInto(dom: HTMLElement, tex: string, display: boolean, onDone?: ()
 }
 
 class MathBlockWidget extends WidgetType {
+  readonly key: string;
+  readonly estimate: number;
+
   constructor(readonly tex: string) {
     super();
+    this.key = `math\n${tex}`;
+    this.estimate = mathEstimate(this.key, tex);
   }
 
   override eq(other: MathBlockWidget): boolean {
-    return other.tex === this.tex;
+    return other.key === this.key && other.estimate === this.estimate;
+  }
+
+  /** Only the estimate changed: keep the drawn formula. */
+  override updateDOM(dom: HTMLElement): boolean {
+    return dom.dataset['key'] === this.key;
+  }
+
+  override get estimatedHeight(): number {
+    return this.estimate;
   }
 
   toDOM(view: EditorView): HTMLElement {
     const dom = document.createElement('div');
     dom.className = 'sm-math-preview';
-    renderInto(dom, this.tex, true, () => view.requestMeasure());
+    dom.dataset['key'] = this.key;
+    // Hold the estimated height until the formula is drawn, so it is never measured empty.
+    dom.style.minHeight = `${this.estimate - PREVIEW_PADDING}px`;
+    renderInto(dom, this.tex, true, () => {
+      dom.style.minHeight = '';
+      view.requestMeasure();
+      rememberHeight(view, this.key, dom);
+    });
     return dom;
   }
 }
@@ -121,17 +148,38 @@ function imageRef(state: EditorState, node: SyntaxNode, definitions: Map<string,
 }
 
 class ImageWidget extends WidgetType {
+  readonly key: string;
+  readonly estimate: number;
+
   constructor(readonly images: readonly ImageRef[]) {
     super();
+    this.key = `images\n${JSON.stringify(images)}`;
+    this.estimate = imagesEstimate(this.key, images.map((image) => image.src));
   }
 
   override eq(other: ImageWidget): boolean {
-    return JSON.stringify(other.images) === JSON.stringify(this.images);
+    return other.key === this.key && other.estimate === this.estimate;
+  }
+
+  /** Only the estimate changed: keep the drawn images. */
+  override updateDOM(dom: HTMLElement): boolean {
+    return dom.dataset['key'] === this.key;
+  }
+
+  override get estimatedHeight(): number {
+    return this.estimate;
   }
 
   toDOM(view: EditorView): HTMLElement {
     const dom = document.createElement('div');
     dom.className = 'sm-image-preview';
+    dom.dataset['key'] = this.key;
+    let waiting = 0;
+    let unsized = 0;
+    const settled = () => {
+      view.requestMeasure();
+      if (--waiting === 0) rememberHeight(view, this.key, dom);
+    };
     for (const image of this.images) {
       const problem = (text: string) => {
         const span = document.createElement('span');
@@ -143,16 +191,35 @@ class ImageWidget extends WidgetType {
         dom.appendChild(problem(image.problem ?? `Can't load ${image.raw}`));
         continue;
       }
+      waiting++;
       const img = dom.appendChild(document.createElement('img'));
+      // Give the image its final box before its pixels arrive, so it is never measured empty.
+      const size = knownImageSize(image.src);
+      if (size) reserveImageBox(img, size);
+      else if (size === undefined) {
+        unsized++;
+        watchImage(img, image.src);
+        whenImageSized(image.src, (known) => {
+          if (known) reserveImageBox(img, known);
+          if (--unsized === 0) dom.style.minHeight = '';
+          view.requestMeasure();
+        });
+      }
+      // Don't hold frames for decoding (a big image is megabytes of pixels): while scrolling
+      // fast through new images, the image may appear a frame later instead.
+      img.decoding = 'async';
       img.src = image.src;
       img.alt = image.alt;
       img.title = image.raw;
-      img.onload = () => view.requestMeasure();
+      img.onload = settled;
       img.onerror = () => {
         img.replaceWith(problem(`Image not found: ${image.raw}`));
-        view.requestMeasure();
+        settled();
       };
     }
+    // Sizes still unknown: hold the estimated height until they are.
+    if (unsized > 0) dom.style.minHeight = `${this.estimate - PREVIEW_PADDING}px`;
+    if (waiting === 0) rememberHeight(view, this.key, dom);
     return dom;
   }
 }
@@ -204,7 +271,11 @@ function blockPreviews(state: EditorState): DecorationSet {
 const blockPreviewField = StateField.define<DecorationSet>({
   create: blockPreviews,
   update(previews, tr) {
-    const changed = tr.docChanged || syntaxTree(tr.state) !== syntaxTree(tr.startState) || tr.state.facet(imageResolver) !== tr.startState.facet(imageResolver);
+    const changed =
+      tr.docChanged ||
+      syntaxTree(tr.state) !== syntaxTree(tr.startState) ||
+      tr.state.facet(imageResolver) !== tr.startState.facet(imageResolver) ||
+      tr.effects.some((effect) => effect.is(refreshEstimates));
     return changed ? blockPreviews(tr.state) : previews;
   },
   provide: (field) => EditorView.decorations.from(field),
@@ -271,5 +342,5 @@ const previewTheme = EditorView.theme({
 
 /** Image and math previews; the source text always stays visible. */
 export function previews(): Extension {
-  return [blockPreviewField, cursorMathTooltip, hoverMathTooltip, previewTheme];
+  return [blockPreviewField, previewLayout, lineHeightHints(), cursorMathTooltip, hoverMathTooltip, previewTheme];
 }

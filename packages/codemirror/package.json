@@ -8,7 +8,7 @@
     ".": "./src/index.ts"
   },
   "scripts": {
-    "dev": "vite demo --port 5180 --strictPort"
+    "dev": "vite demo --config vite.config.ts --port 5180 --strictPort"
   },
   "dependencies": {
     "@codemirror/commands": "^6.11.1",

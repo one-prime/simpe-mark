@@ -1,5 +1,6 @@
 import { defaultTheme } from '@simplemark/model';
 import { createEditor } from '../src/index';
+import { recordScrolling } from './debug';
 
 const sample = `# SimpleMark
 
@@ -62,14 +63,29 @@ $$
 The end.
 `;
 
+/** ?long: many images and formulas, for testing scrolling through unmeasured previews. */
+function longDocument(): string {
+  const parts = ['# Long document\n'];
+  for (let i = 1; i <= 40; i++) {
+    parts.push(
+      `## Section ${i}\n\nSome text for section ${i}, long enough to wrap on a narrow window and keep the paragraph honest.\n\n` +
+        `![Wide](./images/wide.png?${i})\n\n$$\n\\sum_{k=1}^{${i}} k = \\frac{${i}(${i}+1)}{2}\n$$\n\n![Sunset](./images/sunset.png?${i})\n`,
+    );
+  }
+  return parts.join('\n');
+}
+
+const params = new URLSearchParams(location.search);
+const doc = params.has('long') ? longDocument() : sample;
 const source = document.getElementById('source')!;
 const show = (text: string) => (source.textContent = text);
 
 // ?mono=<font family> tries another monospace font, e.g. a Latin-only one for table alignment.
-const mono = new URLSearchParams(location.search).get('mono');
+const mono = params.get('mono');
 const theme = mono ? { ...defaultTheme, monospaceFamily: mono } : defaultTheme;
 
-const view = createEditor(document.getElementById('editor')!, { doc: sample, theme, onChange: show });
+const view = createEditor(document.getElementById('editor')!, { doc, theme, onChange: show });
 // For poking at the editor from the console or browser tests.
 Object.assign(window, { view });
-show(sample);
+if (params.has('debug')) recordScrolling(view);
+show(doc);

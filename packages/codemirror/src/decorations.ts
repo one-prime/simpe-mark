@@ -49,6 +49,8 @@ function cjkFitsColumns(family: string): boolean {
   return fits;
 }
 
+const headingText = Decoration.mark({ class: 'sm-heading-text' });
+
 /** The lines holding a cursor, as a comparable string. */
 function cursorLinesKey(state: EditorState): string {
   return state.selection.ranges.map((r) => state.doc.lineAt(r.head).from).join(',');
@@ -106,6 +108,14 @@ class MarkdownDecorations {
     const ranges: Range<Decoration>[] = [];
     for (const [lineFrom, styles] of lines) ranges.push(this.lineDecoration([...styles]).range(lineFrom));
     for (const span of spans) ranges.push(this.markDecoration(span.styles).range(span.from, span.to));
+    // CodeMirror learns the normal line height from the first short line of plain text it finds
+    // on screen. The text line of a setext heading ("Title" above "---") is plain text in a
+    // bigger font, which made every off-screen line estimated 1.4× too tall. Wrapping it in a
+    // span makes CodeMirror skip it.
+    for (const [lineFrom, styles] of lines) {
+      const line = doc.lineAt(lineFrom);
+      if (line.length && [...styles].some((s) => /^h[1-6]$/.test(s))) ranges.push(headingText.range(line.from, line.to));
+    }
     if (this.fixWide) {
       // Not on lines with a cursor: wrapping text in boxes while an IME composes there makes
       // the browser (Firefox with a Korean IME) drop the composed text onto a stray line. The

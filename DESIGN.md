@@ -200,6 +200,48 @@ overlay layer would be missing from both and break z-order.
   inline HTML; a lighter `htmlTagLanguage` could cut it.
 - Block previews are recomputed from the whole syntax tree on each change; fine
   for normal documents, a candidate for incremental updates later.
+- Scrollbar drift: CodeMirror draws only what is on screen and estimates the
+  rest; a widget without `estimatedHeight` counts as one line. A test document
+  with 40 images and formulas was estimated at 15.5k px instead of 34.9k, and a
+  fast scrollbar drag left the thumb up to 34 px from the mouse (only the first
+  time through; measured parts were right). `preview-heights.ts` now reads image
+  sizes and renders formulas in the background, remembers measured heights, and
+  refreshes estimates without redrawing visible previews (`updateDOM`): estimate
+  33.7k px, worst gap 2 px. Demo: `?long`.
+- Same drift on the first pass while images load (many distinct images, slow
+  connection): a drawn `<img>` has no height until its pixels arrive, so
+  CodeMirror measured empty previews (74 of them at 1 MB/s; gap up to 19 px).
+  Now image sizes are read from the first bytes (checked every frame while
+  loading, not on `load`), an `<img>` gets its final box (width + aspect-ratio)
+  before its pixels arrive, and previews whose size is still unknown (and math
+  not yet rendered) hold their estimated height. Result at 1 MB/s and 300 KB/s:
+  0–1 empty previews, worst gap 1 px. Test: different URL per image in `?long`,
+  throttled with Chromium DevTools protocol, cache off, scroll right away.
+- Text lines: CodeMirror estimates a line as characters ÷ characters-per-line,
+  measured on Latin text, so headings (bigger font) and Korean (twice as wide)
+  came out short — a Korean paragraph drawn on 2 lines was estimated at 1.
+  `line-heights.ts` puts an invisible widget with `estimatedHeight` (text width
+  in the real font, wrapped at the editor width) on headings and long lines;
+  CodeMirror uses the larger of that and its own guess for undrawn lines. Not on
+  cursor lines, never redrawn. Result: English and Korean estimates exact.
+- CodeMirror learns the normal line height from the first short plain-text line
+  on screen — a setext heading's text line qualified and made every estimate
+  1.4× too tall. Heading text lines now get a mark span (CodeMirror skips lines
+  with spans), and our estimates read the line height from CSS instead.
+- Setext heading text lines are estimated at the normal font size (the hint
+  only recognises `#` headings); rare, small error.
+- First fast drag in a real Chrome (user's report, `?long&debug`): scroll events
+  arrived only every 30–60 ms while new images were drawn. Image previews now
+  use `decoding="async"`; the next report showed 17 ms frames, no long frames,
+  and heights within 0.2% (33,914 → 33,840 px).
+- **Known issue:** on the very first fast drag through `?long` (80 large images)
+  the user still sees the thumb and content not matching the mouse; the second
+  drag is fine. Measurements in the user's Chrome (heights, frame timing) look
+  right, and headless tests can't drag a real scrollbar, so the cause isn't
+  pinned down — likely the browser downloading/drawing never-seen images. Left
+  open; revisit if it shows in real documents (a screen recording would help).
+  Debug tooling: demo `?debug` posts a report to the dev server
+  (`<tmp>/simplemark-debug-report.json`).
 - Dev server: changing dependencies while `npm run dev` runs can leave two
   copies of `@codemirror/view` loaded (keymaps silently ignored). Restart it,
   deleting `packages/codemirror/node_modules/.vite`.
