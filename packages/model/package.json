@@ -1,6 +1,6 @@
 {
   "name": "@simple-mark/model",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "private": true,
   "type": "module",
   "description": "Markdown parsing and styling model shared by every renderer. Pure TypeScript, no DOM.",

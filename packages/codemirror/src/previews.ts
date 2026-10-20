@@ -14,7 +14,8 @@ import { lineHeightHints } from './line-heights';
 import { followLink } from './links';
 import { loadMath, loadedMath } from './math-loader';
 import {
-  PREVIEW_PADDING,
+  PREVIEW_EM,
+  previewPadding,
   imagesEstimate,
   knownImageSize,
   mathEstimate,
@@ -78,7 +79,7 @@ class MathBlockWidget extends WidgetType {
     dom.className = 'sm-math-preview';
     dom.dataset['key'] = this.key;
     // Hold the estimated height until the formula is drawn, so it is never measured empty.
-    dom.style.minHeight = `${this.estimate - PREVIEW_PADDING}px`;
+    dom.style.minHeight = `${this.estimate - previewPadding()}px`;
     renderInto(dom, this.tex, true, () => {
       dom.style.minHeight = '';
       view.requestMeasure();
@@ -189,7 +190,7 @@ class ImageWidget extends WidgetType {
       };
     }
     // Sizes still unknown: hold the estimated height until they are.
-    if (unsized > 0) dom.style.minHeight = `${this.estimate - PREVIEW_PADDING}px`;
+    if (unsized > 0) dom.style.minHeight = `${this.estimate - previewPadding()}px`;
     if (waiting === 0) rememberHeight(view, this.key, dom);
     return dom;
   }
@@ -282,11 +283,15 @@ const hoverMathTooltip = hoverTooltip((view, pos) => {
   return tooltip && cursor?.pos === tooltip.pos ? null : tooltip;
 });
 
+const em = (value: number) => `${value}em`;
+const previewSpacing = `${em(PREVIEW_EM.top)} 0 ${em(PREVIEW_EM.bottom)}`;
+
+/** Sizes in em (see PREVIEW_EM), so previews scale with the text like on a canvas. */
 const previewTheme = EditorView.theme({
-  '.sm-image-preview': { display: 'flex', flexWrap: 'wrap', gap: '8px', padding: '4px 0 8px' },
-  '.sm-image-preview img': { maxWidth: '100%', maxHeight: '320px', borderRadius: '4px' },
+  '.sm-image-preview': { display: 'flex', flexWrap: 'wrap', gap: em(PREVIEW_EM.imageGap), padding: previewSpacing },
+  '.sm-image-preview img': { maxWidth: '100%', maxHeight: em(PREVIEW_EM.imageMaxHeight), borderRadius: em(PREVIEW_EM.radius) },
   '.sm-image-error, .sm-math-error': { color: '#cf222e', fontSize: '0.9em' },
-  '.sm-math-preview': { textAlign: 'center', padding: '4px 0 8px', overflowX: 'auto', overflowY: 'hidden' },
+  '.sm-math-preview': { textAlign: 'center', padding: previewSpacing, overflowX: 'auto', overflowY: 'hidden' },
   '.sm-math-tooltip': { padding: '6px 10px' },
 });
 

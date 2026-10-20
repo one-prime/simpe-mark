@@ -26,8 +26,9 @@ export function lookCss(look: LineLook, theme: Theme): string {
     css.push(`text-decoration: ${lines.join(' ') || 'none'}`);
   }
   if (look.lineBackground !== undefined) css.push(`background-color: ${look.lineBackground}`);
-  // An inset shadow draws the bar without changing the line's width.
-  if (look.borderLeft !== undefined) css.push(`box-shadow: inset 3px 0 0 ${look.borderLeft}`, 'padding-left: 12px');
+  // An inset shadow draws the bar without changing the line's width. In em (3px and 12px at
+  // 15px), like @simple-mark/canvas, so the bar scales with the text.
+  if (look.borderLeft !== undefined) css.push(`box-shadow: inset ${3 / 15}em 0 0 ${look.borderLeft}`, `padding-left: ${12 / 15}em`);
   return css.join('; ');
 }
 

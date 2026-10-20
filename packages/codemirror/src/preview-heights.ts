@@ -11,12 +11,19 @@ import { StateEffect } from '@codemirror/state';
 import { ViewPlugin, type EditorView, type ViewUpdate } from '@codemirror/view';
 import { loadMath, loadedMath } from './math-loader';
 
-/** Vertical padding of a preview (CSS: 4px above, 8px below). */
-export const PREVIEW_PADDING = 12;
-/** Largest image preview height (CSS max-height). */
-export const IMAGE_MAX_HEIGHT = 320;
-/** Gap between images on one line (CSS gap). */
-const IMAGE_GAP = 8;
+/**
+ * Preview sizes in em of the editor's font: at 15px, 4px above and 8px below a preview, images
+ * at most 320px tall and 8px apart. The same numbers as @simple-mark/canvas, so a canvas and the
+ * editor agree at any font size (a canvas text may be 48 units tall).
+ */
+export const PREVIEW_EM = { top: 4 / 15, bottom: 8 / 15, imageMaxHeight: 320 / 15, imageGap: 8 / 15, radius: 4 / 15 };
+
+/** Vertical padding of a preview in pixels, at the editor's font size. */
+export function previewPadding(): number {
+  return (PREVIEW_EM.top + PREVIEW_EM.bottom) * layout.fontSize;
+}
+const imageMaxHeight = () => PREVIEW_EM.imageMaxHeight * layout.fontSize;
+const imageGap = () => PREVIEW_EM.imageGap * layout.fontSize;
 
 /** Editor facts the estimates depend on, measured by `previewLayout`. */
 const layout = { contentWidth: 700, exPx: 8, lineHeight: 24, fontSize: 15, fontFamily: 'sans-serif' };
@@ -106,7 +113,7 @@ export function whenImageSized(src: string, then: (size: ImageSize | null) => vo
 /** Gives an <img> its final layout size before its pixels arrive (CSS caps it at the width). */
 export function reserveImageBox(img: HTMLImageElement, size: ImageSize): void {
   img.style.aspectRatio = `${size.width} / ${size.height}`;
-  img.style.width = `${Math.min(size.width, (IMAGE_MAX_HEIGHT * size.width) / size.height)}px`;
+  img.style.width = `${Math.min(size.width, (imageMaxHeight() * size.width) / size.height)}px`;
 }
 
 function probeImage(src: string): void {
@@ -117,17 +124,17 @@ function probeImage(src: string): void {
   img.src = src;
 }
 
-/** Displayed size of one image: fits the width, at most IMAGE_MAX_HEIGHT tall, never enlarged. */
+/** Displayed size of one image: fits the width, at most `imageMaxHeight` tall, never enlarged. */
 function imageBox(src: string | null): { width: number; height: number } {
   const errorLine = { width: layout.contentWidth, height: layout.lineHeight };
   if (src === null) return errorLine;
   const size = imageSizes.get(src);
   if (size === undefined) {
     probeImage(src);
-    return { width: layout.contentWidth, height: IMAGE_MAX_HEIGHT / 2 };
+    return { width: layout.contentWidth, height: imageMaxHeight() / 2 };
   }
   if (size === null) return errorLine;
-  const scale = Math.min(1, layout.contentWidth / size.width, IMAGE_MAX_HEIGHT / size.height);
+  const scale = Math.min(1, layout.contentWidth / size.width, imageMaxHeight() / size.height);
   return { width: size.width * scale, height: size.height * scale };
 }
 
@@ -140,15 +147,15 @@ export function imagesEstimate(key: string, srcs: readonly (string | null)[]): n
   let rowHeight = 0;
   for (const src of srcs) {
     const box = imageBox(src);
-    if (rowWidth > 0 && rowWidth + IMAGE_GAP + box.width > layout.contentWidth) {
-      total += rowHeight + IMAGE_GAP;
+    if (rowWidth > 0 && rowWidth + imageGap() + box.width > layout.contentWidth) {
+      total += rowHeight + imageGap();
       rowWidth = 0;
       rowHeight = 0;
     }
-    rowWidth += (rowWidth > 0 ? IMAGE_GAP : 0) + box.width;
+    rowWidth += (rowWidth > 0 ? imageGap() : 0) + box.width;
     rowHeight = Math.max(rowHeight, box.height);
   }
-  return Math.round(total + rowHeight + PREVIEW_PADDING);
+  return Math.round(total + rowHeight + previewPadding());
 }
 
 // ---- math --------------------------------------------------------------------------------------
@@ -178,14 +185,14 @@ export function mathEstimate(key: string, tex: string): number {
   const result = loadedMath()?.cachedMath(tex, true);
   if (result?.svg !== undefined) {
     const height = /height="([\d.]+)ex"/.exec(result.svg);
-    if (height) return Math.round(parseFloat(height[1]!) * layout.exPx + PREVIEW_PADDING);
+    if (height) return Math.round(parseFloat(height[1]!) * layout.exPx + previewPadding());
   } else if (result?.error !== undefined) {
-    return layout.lineHeight + PREVIEW_PADDING;
+    return layout.lineHeight + previewPadding();
   } else {
     mathQueue.add(tex);
     renderQueuedMath();
   }
-  return 3 * layout.lineHeight + PREVIEW_PADDING;
+  return 3 * layout.lineHeight + previewPadding();
 }
 
 // ---- layout ------------------------------------------------------------------------------------
