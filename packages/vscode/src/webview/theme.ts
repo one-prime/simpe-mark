@@ -47,7 +47,8 @@ export const vscodeTheme: Theme = {
 export const vscodeChrome = EditorView.theme({
   '&': { height: '100%', fontSize: 'var(--vscode-editor-font-size)', backgroundColor: 'var(--vscode-editor-background)' },
   '.cm-scroller': { overflow: 'auto' },
-  '.cm-content': { padding: '16px 24px', maxWidth: '920px', caretColor: 'var(--vscode-editorCursor-foreground)' },
+  // The preview's spacing: the full width, less 26px of padding on both html and body.
+  '.cm-content': { padding: '1em 52px', caretColor: 'var(--vscode-editorCursor-foreground)' },
   '&.cm-focused': { outline: 'none' },
   '.cm-cursor, .cm-dropCursor': { borderLeftColor: 'var(--vscode-editorCursor-foreground)' },
   '.cm-selectionBackground, &.cm-focused > .cm-scroller > .cm-selectionLayer .cm-selectionBackground, .cm-content ::selection': {
