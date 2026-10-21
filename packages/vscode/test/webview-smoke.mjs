@@ -30,6 +30,11 @@ const server = createServer((req, res) => {
   const origin = `http://${req.headers.host}`;
   // Browsers ask for a favicon; VS Code webviews don't.
   if (url.pathname === '/favicon.ico') return res.writeHead(204).end();
+  // VS Code's webview host in miniature: this page in an iframe, and something else to focus.
+  if (url.pathname === '/frame') {
+    res.writeHead(200, { 'content-type': 'text/html' }).end('<button id="outside">outside</button><iframe id="webview" src="/"></iframe>');
+    return;
+  }
   if (url.pathname === '/') {
     const page = webviewHtml({ cspSource: origin, scriptUri: '/webview/webview.js', nonce });
     // The fake VS Code API, allowed by the page's nonce like VS Code's own preload script.
@@ -174,6 +179,29 @@ try {
   await page.waitForTimeout(150);
   check((await lineText(0)) === 'Intro한 ' && (await focused()), `Tab while composing Korean indents after the syllable (${JSON.stringify(await lineText(0))})`);
   for (let i = 0; i < (await toHost()).filter((m) => m.type === 'edit').length; i++) await fromHost({ type: 'ack', ok: true });
+
+  // VS Code gives the focus back (Ctrl+1, switching tabs) by focusing the webview's window only;
+  // the editor must take it, with the cursor where it was. A click from outside still places
+  // the cursor where clicked.
+  const host = await browser.newPage();
+  await host.goto(`${origin}/frame`);
+  const webview = await (await host.waitForSelector('#webview')).contentFrame();
+  await webview.waitForFunction(() => window.toHost?.some((m) => m.type === 'ready'));
+  await webview.evaluate((m) => window.postMessage(m, '*'), { type: 'init', text: 'first line\nsecond line\n', eol: '\n', baseUri: null, workspaceUri: null, readOnly: false, indentUnit: '    ', tabSize: 4 });
+  await webview.locator('.cm-line', { hasText: 'second' }).click();
+  await host.keyboard.press('End');
+  await host.keyboard.type('X');
+  await host.click('#outside');
+  await host.evaluate(() => document.getElementById('webview').contentWindow.focus());
+  await host.keyboard.type('Y');
+  const webviewLines = () => webview.evaluate(() => [...document.querySelectorAll('.cm-line')].map((l) => l.textContent));
+  check((await webviewLines())[1] === 'second lineXY', `focus given back to the webview returns to the cursor (${JSON.stringify(await webviewLines())})`);
+  await host.click('#outside');
+  const first = await webview.locator('.cm-line', { hasText: 'first' }).boundingBox();
+  await host.mouse.click(first.x + 1, first.y + first.height / 2);
+  await host.keyboard.type('Z');
+  check((await webviewLines())[0] === 'Zfirst line', `a click from outside places the cursor where clicked (${JSON.stringify(await webviewLines())})`);
+  await host.close();
 
   const violations = await page.evaluate(() => window.cspViolations);
   check(violations.length === 0, `no CSP violations ${violations.length ? JSON.stringify(violations) : ''}`);

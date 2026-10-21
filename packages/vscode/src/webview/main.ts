@@ -79,6 +79,13 @@ function start(message: Extract<HostMessage, { type: 'init' }>): void {
   view.focus();
 }
 
+// When VS Code gives the editor back the focus (Ctrl+1, switching tabs), it focuses this
+// webview's window but nothing in it, so typing went nowhere until a click. Focus the editor,
+// which puts the cursor back where it was, as in VS Code's text editor.
+window.addEventListener('focus', () => {
+  if (view && !view.hasFocus) view.focus();
+});
+
 /** Makes the editor show `text`, changing only what differs. */
 function reconcile(text: string): void {
   if (!view) return;

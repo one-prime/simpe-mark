@@ -253,6 +253,10 @@ DrawLayout's editing overlay drifted 3–4 px below the canvas text further down
 - VS Code `TextDocument` is the source of truth; webview edits → `WorkspaceEdit`,
   external changes → pushed to webview.
 - VS Code owns undo/redo (CM6 history disabled in this host).
+- Focus: VS Code gives a webview the focus back (Ctrl+1, switching tabs) by focusing its
+  window only (`contentWindow.focus()` in its webview host page), so the body had it and
+  typing went nowhere. On the window's `focus` the editor takes it, with its cursor where it
+  was, as VS Code's text editor does. Smoke test: the page in an iframe, refocused that way.
 - Images resolved via `webview.asWebviewUri()`; theme from `--vscode-*` CSS vars.
 - Positions travel as line/character, never offsets: CodeMirror counts `\r\n`
   as one character, VS Code as two. The host sends the document's EOL and the
