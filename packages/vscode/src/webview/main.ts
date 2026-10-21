@@ -67,6 +67,8 @@ function start(message: Extract<HostMessage, { type: 'init' }>): void {
     doc: message.text,
     lineSeparator: message.eol,
     readOnly: message.readOnly,
+    indentUnit: message.indentUnit,
+    tabSize: message.tabSize,
     theme: vscodeTheme,
     history: false, // VS Code owns undo/redo for the document
     resolveImage: imageResolver(message.baseUri, message.workspaceUri),

@@ -116,7 +116,9 @@ class SimpleMarkEditorProvider implements vscode.CustomTextEditorProvider {
     const subscriptions = [
       webview.onDidReceiveMessage((message: WebviewMessage) => {
         switch (message.type) {
-          case 'ready':
+          case 'ready': {
+            const editor = vscode.workspace.getConfiguration('editor', { uri: document.uri, languageId: 'markdown' });
+            const tabSize = editor.get<number>('tabSize', 4);
             post({
               type: 'init',
               text: document.getText(),
@@ -124,8 +126,11 @@ class SimpleMarkEditorProvider implements vscode.CustomTextEditorProvider {
               baseUri: folder ? `${webview.asWebviewUri(folder).toString()}/` : null,
               workspaceUri: workspace ? `${webview.asWebviewUri(workspace).toString()}/` : null,
               readOnly: vscode.workspace.fs.isWritableFileSystem(document.uri.scheme) === false,
+              indentUnit: editor.get<boolean>('insertSpaces', true) ? ' '.repeat(tabSize) : '\t',
+              tabSize,
             });
             break;
+          }
           case 'edit':
             queue = queue.then(() => apply(message));
             break;

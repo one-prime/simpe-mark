@@ -75,6 +75,20 @@ height that is not in the text.
 - Padding uses **display width**, not string length — CJK characters count as 2
   columns.
 
+### Tab key
+
+Tab works as in VS Code's text editor (`codemirror/src/tab-key.ts`): it inserts spaces up to
+the next tab stop at the cursor, also mid-line (or a tab character when indenting with tabs),
+and replaces a selection within a line; a selection across lines, or of whole lines, is
+indented. Shift-Tab outdents. Tab stops count columns as VS Code does: a tab reaches the next
+stop, a wide (CJK) character is two columns. Tables keep their Tab (next cell, higher
+precedence). Ctrl-M (Shift-Alt-M on macOS) switches Tab to moving the focus, as in VS Code.
+`createEditor` takes `indentUnit` (default four spaces) and `tabSize` (4); the VS Code host
+passes the user's `editor.insertSpaces` and `editor.tabSize` for Markdown, read when the
+document opens (indentation is not detected from the file, unlike VS Code's
+`editor.detectIndentation`). Tab during IME composition waits for the commit, then runs the
+editor's Tab binding, for tables and text alike.
+
 ### Math
 
 - **MathJax with SVG output**: self-contained SVG (no fonts to load), so the same
@@ -319,8 +333,8 @@ overlay layer would be missing from both and break z-order.
   splitting the row), and Tab moves focus out of the editor. Fixes: any typed
   line break inside a table (not paste/drop) is turned into "add a row below"
   with the typed text kept in its cell; Tab during composition is taken in the
-  capture phase and runs after the IME commits. Reproduced and verified with
-  Chromium's IME emulation.
+  capture phase and runs after the IME commits (now for indentation outside tables too).
+  Reproduced and verified with Chromium's IME emulation (a smoke test check).
 - With a real IME (ibus, Korean), a syllable typed in a table landed on a stray
   line of its own — without any Enter. Likely cause: the wide-character boxes
   wrapped the text while it was being composed, changing the DOM under the IME.

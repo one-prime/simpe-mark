@@ -1,13 +1,14 @@
 // Table editing: Tab / Shift-Tab move between cells and Enter adds a row. Each command
 // re-aligns the whole table in the same transaction, so it is one undo step. Outside a
 // table the commands return false and the keys keep their normal meaning. IME composition
-// (Korean) needs extra care: see lineBreakToRow and tabWhileComposing.
+// (Korean) needs extra care: see lineBreakToRow, and tabWhileComposing in tab-key.ts.
 
 import { ensureSyntaxTree, syntaxTree } from '@codemirror/language';
 import { EditorState, Prec, type Extension, type StateCommand, type Transaction } from '@codemirror/state';
-import { EditorView, ViewPlugin, keymap } from '@codemirror/view';
+import { keymap } from '@codemirror/view';
 import type { SyntaxNode } from '@lezer/common';
 import { cellAt, parseTable, renderTable, rowLine, type Table } from '@simple-mark/model';
+import { tabWhileComposing } from './tab-key';
 
 interface TableLine {
   /** Start of the document line, including any prefix such as "> " or list indentation. */
@@ -182,37 +183,6 @@ const lineBreakToRow = EditorState.transactionFilter.of((tr) => {
   const done = row as Transaction | null;
   return { changes: withoutBreak.compose(done!.changes), selection: done!.selection, scrollIntoView: true, userEvent: 'input.table' };
 });
-
-/**
- * Tab while an IME is composing: CodeMirror skips its keymaps then, and the browser would move
- * the focus out of the editor. Take the key, let the IME commit, then move to the cell.
- */
-const tabWhileComposing = ViewPlugin.fromClass(
-  class {
-    constructor(readonly view: EditorView) {
-      view.dom.addEventListener('keydown', this.onKeydown, true);
-    }
-
-    destroy(): void {
-      this.view.dom.removeEventListener('keydown', this.onKeydown, true);
-    }
-
-    onKeydown = (event: KeyboardEvent): void => {
-      const { view } = this;
-      if (event.key !== 'Tab' || event.ctrlKey || event.altKey || event.metaKey) return;
-      if (!(event.isComposing || event.keyCode === 229 || view.compositionStarted) || !tableAt(view.state)) return;
-      event.preventDefault();
-      event.stopPropagation();
-      const command = event.shiftKey ? previousCell : nextCell;
-      const start = Date.now();
-      const run = () => {
-        if (!view.compositionStarted) command(view);
-        else if (Date.now() - start < 1000) setTimeout(run, 20);
-      };
-      setTimeout(run, 0);
-    };
-  },
-);
 
 /** Table editing keys, ahead of the default and Markdown keymaps, and their IME counterparts. */
 export function tableEditing(): Extension {

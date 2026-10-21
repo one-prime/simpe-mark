@@ -85,7 +85,7 @@ try {
 
   const text = '# Title\r\n\r\n| a | b |\r\n|---|---|\r\n| 1 | 2 |\r\n\r\n![sunset](sunset.png)\r\n\r\n$$\r\n\\mathbb{R}^n\r\n$$\r\n\r\nSee [the docs](https://example.com/docs) and [notes](notes/b.md).\r\n\r\n![from the workspace](/sunset.png)\r\n';
   // The document's folder and the workspace folder (here both /docs/).
-  await fromHost({ type: 'init', text, eol: '\r\n', baseUri: `${origin}/docs/`, workspaceUri: `${origin}/docs/`, readOnly: false });
+  await fromHost({ type: 'init', text, eol: '\r\n', baseUri: `${origin}/docs/`, workspaceUri: `${origin}/docs/`, readOnly: false, indentUnit: '  ', tabSize: 4 });
   await page.waitForSelector('.cm-content');
   await page.waitForFunction(() => document.querySelector('.sm-math-preview svg'), null, { timeout: 15000 });
   check(true, 'math renders under the CSP (lazy MathJax chunk and font part)');
@@ -145,6 +145,35 @@ try {
     { kind: 'image', url: 'sunset.png' },
   ];
   check(JSON.stringify(opened) === JSON.stringify(expected), `Ctrl+Click on links and a click on an image preview ask the host to open them (${JSON.stringify(opened)})`);
+
+  // Tab indents like a text editor (by the host's setting, here two spaces) and keeps the focus;
+  // in a table it still moves to the next cell.
+  await toHost();
+  await page.locator('.cm-line', { hasText: 'Intro' }).click();
+  await page.keyboard.press('Home');
+  await page.keyboard.press('Tab');
+  const lineText = (n) => page.evaluate((i) => document.querySelectorAll('.cm-line')[i].textContent, n);
+  const focused = () => page.evaluate(() => document.activeElement?.classList.contains('cm-content'));
+  check((await lineText(0)) === '  Intro' && (await focused()), `Tab inserts the indent unit and keeps the focus (${JSON.stringify(await lineText(0))})`);
+  await page.keyboard.press('Shift+Tab');
+  check((await lineText(0)) === 'Intro', `Shift+Tab outdents (${JSON.stringify(await lineText(0))})`);
+  await page.locator('.cm-line', { hasText: '| a | b |' }).click();
+  await page.keyboard.press('Tab');
+  const header = await page.evaluate(() => [...document.querySelectorAll('.cm-line')].find((l) => l.textContent.includes('| a'))?.textContent);
+  check(header === '| a   | b   |' && (await focused()), `Tab in a table still moves to the next cell, re-aligned (${JSON.stringify(header)})`);
+  for (let i = 0; i < (await toHost()).filter((m) => m.type === 'edit').length; i++) await fromHost({ type: 'ack', ok: true });
+
+  // Tab while a Korean syllable is being composed: taken from the browser (which would move the
+  // focus), then run once the IME commits. Chromium's IME emulation.
+  const ime = await page.context().newCDPSession(page);
+  await page.locator('.cm-line', { hasText: 'Intro' }).click();
+  await page.keyboard.press('End');
+  await ime.send('Input.imeSetComposition', { text: '한', selectionStart: 1, selectionEnd: 1 });
+  await page.keyboard.press('Tab');
+  await ime.send('Input.insertText', { text: '한' });
+  await page.waitForTimeout(150);
+  check((await lineText(0)) === 'Intro한 ' && (await focused()), `Tab while composing Korean indents after the syllable (${JSON.stringify(await lineText(0))})`);
+  for (let i = 0; i < (await toHost()).filter((m) => m.type === 'edit').length; i++) await fromHost({ type: 'ack', ok: true });
 
   const violations = await page.evaluate(() => window.cspViolations);
   check(violations.length === 0, `no CSP violations ${violations.length ? JSON.stringify(violations) : ''}`);

@@ -1,6 +1,6 @@
 {
   "name": "@simple-mark/canvas",
-  "version": "0.3.7",
+  "version": "0.3.8",
   "private": true,
   "type": "module",
   "description": "Draws Markdown on a <canvas> without hiding its syntax: layout (no DOM) and Canvas 2D painting.",

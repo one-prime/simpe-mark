@@ -15,6 +15,9 @@ const view = createEditor(document.getElementById('editor')!, {
 });
 ```
 
+- **Tab** indents as in VS Code's text editor (spaces to the next tab stop, or the selected
+  lines; `indentUnit` and `tabSize` options); Shift-Tab outdents; Ctrl-M lets Tab move the
+  focus instead.
 - **Tables**: Tab / Shift-Tab move between cells, Enter adds a row; each re-aligns the
   table. Korean, Chinese and Japanese line up (drawn exactly two columns wide), and typing
   them with an IME is safe.

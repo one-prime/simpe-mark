@@ -8,6 +8,9 @@ its `**`. The file on disk is exactly what you typed, byte for byte.
 ## Features
 
 - Headings, emphasis, code, quotes, lists and links styled in place, markers dimmed.
+- **Tab** indents as in VS Code's text editor, by your `editor.tabSize` and
+  `editor.insertSpaces` for Markdown; Shift+Tab outdents. Ctrl+M switches Tab to moving the
+  focus.
 - **Tables**: Tab / Shift-Tab move between cells, Enter adds a row; each re-aligns the
   table. Korean and other wide characters line up.
 - **Math**: `$inline$` shows a rendered tooltip, `$$` blocks render below their source

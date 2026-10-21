@@ -25,6 +25,9 @@ export type HostMessage =
       /** The workspace folder as a webview URL ending in "/", for paths starting with "/". */
       workspaceUri: string | null;
       readOnly: boolean;
+      /** What Tab inserts: the user's editor.insertSpaces / editor.tabSize for Markdown. */
+      indentUnit: string;
+      tabSize: number;
     }
   /** The document changed outside this webview (undo, another editor, git). */
   | { type: 'update'; text: string }
