@@ -20,6 +20,9 @@ const view = createEditor(document.getElementById('editor')!, {
   them with an IME is safe.
 - **Images** and `$$` math preview below their source; `$inline$` math in a tooltip. Math
   (`@simple-mark/math`) loads only when a document has math.
+- **Colors** in fenced code blocks, as VS Code's Markdown preview colors them
+  (`@simple-mark/highlight`, highlight.js; each language loads when a block needs it), and
+  in TeX: commands, brackets by nesting depth, an unmatched brace in red.
 - **Links**: Ctrl+Click (⌘+Click on macOS) follows a link — a plain click keeps placing the
   cursor, since links are editable text. `#heading` links jump within the document; other
   schemes than http(s)/mailto are refused; web pages and paths go to `openLink` (default: a

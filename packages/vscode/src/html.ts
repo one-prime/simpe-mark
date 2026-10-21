@@ -35,8 +35,18 @@ export function webviewHtml({ cspSource, scriptUri, nonce }: PageOptions): strin
   body { background: var(--vscode-editor-background); color: var(--vscode-editor-foreground); }
   #editor { height: 100%; }
   /* Token colors of VS Code's Markdown preview (media/highlight.css), by theme kind. */
-  body { --sm-keyword: #569cd6; --sm-comment: #57a64a; }
-  body.vscode-light, body.vscode-high-contrast-light { --sm-keyword: #00f; --sm-comment: #008000; }
+  body {
+    --sm-keyword: #569cd6; --sm-literal: #569cd6; --sm-type: #4ec9b0; --sm-number: #b8d7a3;
+    --sm-string: #d69d85; --sm-comment: #57a64a; --sm-title: #dcdcdc; --sm-meta: #9b9b9b;
+    --sm-variable: #bd63c5; --sm-attr: #9cdcfe; --sm-tag: #569cd6; --sm-section: #ffd700;
+    --sm-selector: #d7ba7d;
+  }
+  body.vscode-light, body.vscode-high-contrast-light {
+    --sm-keyword: #00f; --sm-literal: #a31515; --sm-type: #007acc; --sm-number: #008000;
+    --sm-string: #a31515; --sm-comment: #008000; --sm-title: #808080; --sm-meta: #2b91af;
+    --sm-variable: #008000; --sm-attr: #f00; --sm-tag: #00f; --sm-section: #a31515;
+    --sm-selector: #d7ba7d;
+  }
 </style>
 </head>
 <body>

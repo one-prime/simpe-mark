@@ -45,6 +45,11 @@ describe('layoutMarkdown', () => {
     ]);
   });
 
+  it('colors code blocks with the host highlighter', () => {
+    const result = layout('```js\nlet a\n```', { highlight: (code) => (code === 'let a' ? [{ from: 0, to: 3, style: 'codeKeyword' }] : undefined) });
+    expect(result.runs.find((r) => r.text === 'let')!.color).toBe(defaultTheme.inline.codeKeyword.color);
+  });
+
   it('makes headings bigger, with taller lines, and keeps the # dimmed', () => {
     const result = layout('# Title\nbody');
     const [hash, title, body] = result.runs;

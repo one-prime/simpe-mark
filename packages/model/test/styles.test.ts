@@ -105,6 +105,27 @@ describe('markdownStyles', () => {
     expect(spans(text).filter(([, s]) => s === 'mark').map(([t]) => t)).toEqual(['|', '|', '|', '|---|--:|', '|', '|', '|']);
   });
 
+  it('colors fenced code with a highlighter, cut around quote markers', () => {
+    const text = '> ```py x\n> ab\n> cd\n> ```';
+    const asked: [string, string][] = [];
+    const { spans } = markdownStyles(markdownParser.parse(text), 0, text.length, {
+      slice: (from, to) => text.slice(from, to),
+      highlight: (code, info) => {
+        asked.push([code, info]);
+        // "b\nc", across the line break.
+        return [{ from: 1, to: 4, style: 'codeString' }];
+      },
+    });
+    expect(asked).toEqual([['ab\ncd', 'py x']]);
+    expect(spans.filter((s) => s.styles.includes('codeString')).map((s) => text.slice(s.from, s.to))).toEqual(['b\n', 'c']);
+  });
+
+  it('leaves code plain while the highlighter has no colors', () => {
+    const text = '```js\nlet a\n```';
+    const result = markdownStyles(markdownParser.parse(text), 0, text.length, { slice: (from, to) => text.slice(from, to), highlight: () => undefined });
+    expect(result.spans.map((s) => s.styles.join(' '))).toEqual(['mark', 'mark']);
+  });
+
   it('limits work to a range but keeps constructs that cross its edges whole', () => {
     const text = 'para one\n\n**bold**\n\npara *two*';
     const tree = markdownParser.parse(text);

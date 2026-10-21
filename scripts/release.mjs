@@ -19,7 +19,7 @@ import { join } from 'node:path';
 import { build } from 'tsdown';
 
 /** In dependency order: a package is published after the packages it uses. */
-const PACKAGES = ['model', 'math', 'canvas', 'codemirror'];
+const PACKAGES = ['model', 'math', 'highlight', 'canvas', 'codemirror'];
 const root = new URL('..', import.meta.url).pathname;
 const mode = process.argv.includes('--pack') ? 'pack' : process.argv.includes('--dry-run') ? 'dry-run' : 'publish';
 const read = (path) => JSON.parse(readFileSync(path, 'utf8'));

@@ -1,4 +1,5 @@
 import { createEditor } from '@simple-mark/codemirror';
+import { createHighlighter } from '@simple-mark/highlight';
 import { defaultTheme } from '@simple-mark/model';
 import { createMathImages, layoutMarkdown, paintMarkdown, type Size } from '../src/index';
 
@@ -20,7 +21,8 @@ a [link](https://example.com) and inline math $E = mc^2$.
 | 지민  |   4 | Busan |
 
 \`\`\`ts
-const answer = 42;
+// Colored like the editor
+const answer: number = 42;
 \`\`\`
 
 ![A sunset](./sunset.png "Sample PNG")
@@ -63,12 +65,13 @@ const imageSize = (src: string): Size | null | undefined => {
   return img === null ? null : img && img.complete && img.naturalWidth ? { width: img.naturalWidth, height: img.naturalHeight } : undefined;
 };
 const math = createMathImages(() => draw());
+const highlight = createHighlighter(() => draw());
 
 let text = sample;
 function draw(): void {
   const width = pane.clientWidth - 40;
   const style = { fontFamily: defaultTheme.fontFamily, fontSize: 15, fontWeight: 400, lineHeight: 1.6, color: defaultTheme.color };
-  const layout = layoutMarkdown(text, { width, style, measure, imageSize, mathSize: (tex, family) => math.size(tex, family) });
+  const layout = layoutMarkdown(text, { width, style, measure, imageSize, mathSize: (tex, family) => math.size(tex, family), highlight });
   const dpr = devicePixelRatio;
   canvas.width = Math.ceil(width * dpr);
   canvas.height = Math.ceil(layout.height * dpr);

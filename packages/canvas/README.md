@@ -17,6 +17,7 @@ const layout = layoutMarkdown('# Room 3\n\n**Locked** until the key is found.', 
   measure,
   imageSize: (src) => sizeOf(src),              // natural size; undefined while loading
   mathSize: (tex, family) => math.size(tex, family),
+  highlight,                                    // optional: createHighlighter(() => redraw())
 });
 paintMarkdown(ctx, layout, { image: (src) => loaded(src), math: (tex, color) => math.image(tex, color) }, '#222');
 // layout.width / layout.height: the box the text needs.
@@ -25,5 +26,7 @@ paintMarkdown(ctx, layout, { image: (src) => loaded(src), math: (tex, color) => 
 - `layoutMarkdown` has no DOM dependency: text widths come from your `measure`.
 - Math is rendered by `@simple-mark/math` (MathJax, loaded the first time it's needed) and
   drawn as an image in the text's color.
+- Code blocks get colors from `highlight` (`createHighlighter` from `@simple-mark/highlight`),
+  TeX gets its colors without one; both as in the editor.
 
 MIT

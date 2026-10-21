@@ -14,6 +14,7 @@ import {
   type BlockStyle,
   type InlineStyle,
   type Look,
+  type StyleSource,
   type Theme,
 } from '@simple-mark/model';
 
@@ -48,6 +49,8 @@ export interface LayoutOptions {
    * has an error, undefined while rendering.
    */
   mathSize?: (tex: string, fontFamily: string) => Size | null | undefined;
+  /** Colors of fenced code blocks (see `createHighlighter` in @simple-mark/highlight). */
+  highlight?: StyleSource['highlight'];
 }
 
 /** A piece of text in one style. `top` is the top of its line box; text is drawn from `textTop`. */
@@ -173,7 +176,7 @@ export function layoutMarkdown(source: string, options: LayoutOptions): Markdown
   // One character per line break, so offsets match the parser's positions.
   const text = source.replace(/\r\n?/g, '\n');
   const tree = markdownParser.parse(text);
-  const { blocks, spans } = markdownStyles(tree, 0, text.length, (from, to) => text.slice(from, to));
+  const { blocks, spans } = markdownStyles(tree, 0, text.length, { slice: (from, to) => text.slice(from, to), highlight: options.highlight });
 
   const lineStarts = [0];
   for (let i = text.indexOf('\n'); i !== -1; i = text.indexOf('\n', i + 1)) lineStarts.push(i + 1);

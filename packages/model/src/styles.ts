@@ -11,7 +11,8 @@ export type BlockStyle = (typeof BLOCK_STYLES)[number];
 
 /**
  * Styles of text ranges, in precedence order ("mark" last, so markers stay dimmed everywhere).
- * The math* ones color a formula's TeX (see math-tokens.ts).
+ * The math* ones color a formula's TeX (see math-tokens.ts), the code* ones the text of a
+ * fenced code block (from a highlighter, see StyleSource).
  */
 export const INLINE_STYLES = [
   'link',
@@ -26,6 +27,21 @@ export const INLINE_STYLES = [
   'mathBracket2',
   'mathBracket3',
   'mathBracketError',
+  'codeKeyword',
+  'codeLiteral',
+  'codeType',
+  'codeNumber',
+  'codeString',
+  'codeComment',
+  'codeTitle',
+  'codeMeta',
+  'codeVariable',
+  'codeAttr',
+  'codeTag',
+  'codeSection',
+  'codeSelector',
+  'codeAddition',
+  'codeDeletion',
   'url',
   'mark',
 ] as const;
@@ -44,6 +60,24 @@ export interface Span {
   to: number;
   /** In `INLINE_STYLES` order. */
   styles: InlineStyle[];
+}
+
+/** A styled range of a code block's text, from a highlighter: offsets in that text. */
+export interface CodeToken {
+  from: number;
+  to: number;
+  style: InlineStyle;
+}
+
+/** The document text, for the styles that depend on more than the syntax tree. */
+export interface StyleSource {
+  /** Reads the document. With it, the TeX inside math gets its colors. */
+  slice: (from: number, to: number) => string;
+  /**
+   * The colors of a fenced code block's text; `info` is what follows the opening fence
+   * ("ts", "js title=x"). Undefined while they are not known: the block stays plain.
+   */
+  highlight?: (code: string, info: string) => readonly CodeToken[] | undefined;
 }
 
 export interface MarkdownStyles {
@@ -120,11 +154,34 @@ function mathPieces(node: SyntaxNode, slice: (from: number, to: number) => strin
 }
 
 /**
- * Styles for the part of `tree` between `from` and `to` (a viewport). The range grows to whole
- * top-level blocks, so constructs that cross its edges keep both their markers. With `slice`
- * (reads the document), the TeX inside math gets its colors too.
+ * A fenced code block's colors in the document. Its text comes in pieces (CodeText nodes,
+ * line breaks included) between quote markers and list indentation; tokens are cut to them.
  */
-export function markdownStyles(tree: Tree, from = 0, to = tree.length, slice?: (from: number, to: number) => string): MarkdownStyles {
+function codeTokens(node: SyntaxNode, { slice, highlight }: StyleSource): CodeToken[] {
+  const info = node.getChild('CodeInfo');
+  const pieces = node.getChildren('CodeText').map((part) => ({ from: part.from, text: slice(part.from, part.to) }));
+  const tokens = pieces.length ? highlight?.(pieces.map((p) => p.text).join(''), info ? slice(info.from, info.to) : '') : undefined;
+  if (!tokens) return [];
+  const out: CodeToken[] = [];
+  let start = 0;
+  for (const piece of pieces) {
+    const end = start + piece.text.length;
+    for (const token of tokens) {
+      const from = Math.max(token.from, start);
+      const to = Math.min(token.to, end);
+      if (from < to) out.push({ from: piece.from + from - start, to: piece.from + to - start, style: token.style });
+    }
+    start = end;
+  }
+  return out;
+}
+
+/**
+ * Styles for the part of `tree` between `from` and `to` (a viewport). The range grows to whole
+ * top-level blocks, so constructs that cross its edges keep both their markers. With `source`,
+ * the TeX inside math and (with a highlighter) the code in fenced blocks get their colors.
+ */
+export function markdownStyles(tree: Tree, from = 0, to = tree.length, source?: StyleSource): MarkdownStyles {
   from = Math.min(from, topLevelBlock(tree, from, 1)?.from ?? from);
   to = Math.max(to, topLevelBlock(tree, to, -1)?.to ?? to);
   const blocks: BlockRange[] = [];
@@ -139,7 +196,8 @@ export function markdownStyles(tree: Tree, from = 0, to = tree.length, slice?: (
       if (block) blocks.push({ from: node.from, to: node.to, style: block });
       if (node.name === 'Table') tableRows = 0;
       if (node.name === 'TableRow' && ++tableRows % 2 === 0) blocks.push({ from: node.from, to: node.to, style: 'tableRowAlt' });
-      if (slice && (node.name === 'InlineMath' || node.name === 'BlockMath')) inline.push(...mathTokens(mathPieces(node.node, slice)));
+      if (source && (node.name === 'InlineMath' || node.name === 'BlockMath')) inline.push(...mathTokens(mathPieces(node.node, source.slice)));
+      if (source?.highlight && node.name === 'FencedCode') inline.push(...codeTokens(node.node, source));
       // An escape is "\" plus the escaped character; only the backslash is syntax.
       if (node.name === 'Escape') {
         inline.push({ from: node.from, to: node.from + 1, style: 'mark' });

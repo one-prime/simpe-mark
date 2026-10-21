@@ -4,8 +4,9 @@
 // are added as well, for host CSS and tests.
 
 import { syntaxTree } from '@codemirror/language';
-import { Facet, type EditorState, type Line, type Range } from '@codemirror/state';
+import { Facet, StateEffect, type EditorState, type Line, type Range } from '@codemirror/state';
 import { Decoration, ViewPlugin, type DecorationSet, type EditorView, type ViewUpdate } from '@codemirror/view';
+import { createHighlighter } from '@simple-mark/highlight';
 import { followKeyName } from './links';
 import {
   STROKES,
@@ -80,6 +81,9 @@ function cjkFitsColumns(family: string): boolean {
 
 const headingText = Decoration.mark({ class: 'sm-heading-text' });
 
+/** A code block's language has loaded: draw its colors. */
+const languageLoaded = StateEffect.define<null>();
+
 /** The lines holding a cursor, as a comparable string. */
 function cursorLinesKey(state: EditorState): string {
   return state.selection.ranges.map((r) => state.doc.lineAt(r.head).from).join(',');
@@ -90,11 +94,19 @@ class MarkdownDecorations {
   private theme: Theme;
   private fixWide: boolean;
   private cache = new Map<string, Decoration>();
+  private destroyed = false;
+  private highlight = createHighlighter(() => {
+    if (!this.destroyed) this.view.dispatch({ effects: languageLoaded.of(null) });
+  });
 
-  constructor(view: EditorView) {
+  constructor(private view: EditorView) {
     this.theme = view.state.facet(markdownTheme);
     this.fixWide = !cjkFitsColumns(this.theme.monospaceFamily);
     this.decorations = this.build(view);
+  }
+
+  destroy(): void {
+    this.destroyed = true;
   }
 
   update(update: ViewUpdate): void {
@@ -107,6 +119,7 @@ class MarkdownDecorations {
       !update.docChanged &&
       !update.viewportChanged &&
       syntaxTree(update.state) === syntaxTree(update.startState) &&
+      !update.transactions.some((tr) => tr.effects.some((e) => e.is(languageLoaded))) &&
       !(this.fixWide && update.selectionSet && cursorLinesKey(update.state) !== cursorLinesKey(update.startState))
     ) {
       return;
@@ -117,7 +130,7 @@ class MarkdownDecorations {
   private build(view: EditorView): DecorationSet {
     const { doc } = view.state;
     const { from, to } = view.viewport;
-    const { blocks, spans } = markdownStyles(syntaxTree(view.state), from, to, (a, b) => doc.sliceString(a, b));
+    const { blocks, spans } = markdownStyles(syntaxTree(view.state), from, to, { slice: (a, b) => doc.sliceString(a, b), highlight: this.highlight });
 
     /** Block styles of each line, and the styles whose block starts or ends there. */
     const lines = new Map<number, { styles: Set<BlockStyle>; first: Set<BlockStyle>; last: Set<BlockStyle> }>();

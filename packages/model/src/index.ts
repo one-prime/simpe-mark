@@ -9,9 +9,11 @@ export {
   markdownStyles,
   type BlockRange,
   type BlockStyle,
+  type CodeToken,
   type InlineStyle,
   type MarkdownStyles,
   type Span,
+  type StyleSource,
 } from './styles';
 export {
   cellAt,

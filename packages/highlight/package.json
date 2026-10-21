@@ -1,0 +1,14 @@
+{
+  "name": "@simple-mark/highlight",
+  "version": "0.3.7",
+  "private": true,
+  "type": "module",
+  "description": "Code block highlighting with highlight.js, as VS Code's Markdown preview. Pure TypeScript, no DOM.",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "dependencies": {
+    "@simple-mark/model": "*",
+    "highlight.js": "^11.12.0"
+  }
+}

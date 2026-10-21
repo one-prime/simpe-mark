@@ -11,7 +11,10 @@ its `**`. The file on disk is exactly what you typed, byte for byte.
 - **Tables**: Tab / Shift-Tab move between cells, Enter adds a row; each re-aligns the
   table. Korean and other wide characters line up.
 - **Math**: `$inline$` shows a rendered tooltip, `$$` blocks render below their source
-  (MathJax).
+  (MathJax). The TeX is colored: commands, brackets in your bracket pair colors, an unmatched
+  brace in red.
+- **Code blocks** are colored by their language, as in VS Code's Markdown preview
+  (highlight.js, 190+ languages).
 - **Images** preview below their line; paths are relative to the document (see Links for
   paths starting with `/`).
 - **Links**: Ctrl+Click (⌘+Click on macOS) opens a link: web pages in your browser (VS Code

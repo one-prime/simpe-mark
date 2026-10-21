@@ -10,7 +10,7 @@ function tokens(tex: string): [string, string][] {
 
 /** Math-token spans of a Markdown text (markers and the plain math style left out). */
 function mathSpans(text: string): [string, string][] {
-  const { spans } = markdownStyles(markdownParser.parse(text), 0, text.length, (from, to) => text.slice(from, to));
+  const { spans } = markdownStyles(markdownParser.parse(text), 0, text.length, { slice: (from, to) => text.slice(from, to) });
   return spans
     .map((s): [string, string] => [text.slice(s.from, s.to), s.styles.filter((style) => style.startsWith('math') && style !== 'math').join(' ')])
     .filter(([, style]) => style);
