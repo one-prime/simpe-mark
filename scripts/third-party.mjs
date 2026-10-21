@@ -24,21 +24,18 @@ const OVERRIDES = {
     // The LICENSE file is the bare Apache 2.0 text; the copyright is in the source headers.
     copyright: 'Copyright (c) 2017-2026 The MathJax Consortium',
   },
-  '@mathjax/mathjax-newcm-font': {
+  '@mathjax/mathjax-modern-font': {
     copyright: 'Copyright (c) The MathJax Consortium',
     // Labeled Apache-2.0 in package.json, but the package ships no license file.
     licenseFile: 'node_modules/@mathjax/src/LICENSE',
     note: [
       'MathJax labels this package Apache-2.0 but ships no license file; the Apache License 2.0',
-      'text above is the one of MathJax itself (@mathjax/src). MathJax states that the font is',
-      '"based on New Computer Modern". The New Computer Modern fonts (Antonis Tsolomitis,',
-      'https://ctan.org/pkg/newcomputermodern) are distributed under the GUST Font License, that',
-      'is the LaTeX Project Public License 1.3c, except NewCM10-Regular, NewCMUncial and',
-      'NewCM*Devanagari, which since New Computer Modern 8.0.0 are under GPL-3.0-or-later with a',
-      'Font Exception and a Distribution Exception. Which version MathJax built its font from is',
-      'not stated. The license texts of New Computer Modern follow.',
+      'text above is the one of MathJax itself (@mathjax/src). MathJax states that the font is "a',
+      'version of Latin-Modern". The Latin Modern fonts (https://www.gust.org.pl/projects/e-foundry/latin-modern)',
+      'are distributed under the GUST Font License, an instance of the LaTeX Project Public',
+      'License 1.3c. Their copyright notices and license texts follow.',
     ].join('\n'),
-    extra: ['licenses/NewComputerModern-License.txt', 'licenses/GUST-FONT-LICENSE.txt', 'licenses/LPPL-1.3c.txt'],
+    extra: ['licenses/LatinModern-License.txt', 'licenses/GUST-FONT-LICENSE.txt', 'licenses/LPPL-1.3c.txt'],
   },
 };
 

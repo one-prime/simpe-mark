@@ -15,6 +15,15 @@ const { svg, error } = await renderMath('\\sum_{k=1}^n k = \\frac{n(n+1)}{2}', t
 - TeX packages that create links or HTML (`\href`, `\style`, raw HTML) and packages that
   load code are not included, so documents from anyone are safe to render.
 
-MIT. MathJax and its font come with their own licenses (Apache-2.0, as MathJax labels
-them); MathJax says the font is based on New Computer Modern, whose fonts are under the GUST
-Font License or, for a few, GPL-3.0 with a font exception.
+- Formulas are drawn with MathJax's Latin Modern font (`@mathjax/mathjax-modern-font`).
+  MathJax's SVG output still imports its default font (New Computer Modern, whose license in
+  MathJax's version is unclear) through `#default-font/*`; when you bundle this package,
+  alias that import to Latin Modern so it stays out:
+
+  ```ts
+  // vite.config.ts
+  resolve: { alias: [{ find: /^#default-font\/(.*)$/, replacement: '@mathjax/mathjax-modern-font/mjs/$1' }] },
+  ```
+
+MIT. MathJax and its font come with their own licenses (Apache-2.0, as MathJax labels them);
+the font is a version of Latin Modern, under the GUST Font License.

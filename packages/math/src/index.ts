@@ -13,7 +13,7 @@ import '@mathjax/src/js/input/tex/braket/BraketConfiguration.js';
 import '@mathjax/src/js/input/tex/cancel/CancelConfiguration.js';
 import '@mathjax/src/js/input/tex/color/ColorConfiguration.js';
 import '@mathjax/src/js/input/tex/newcommand/NewcommandConfiguration.js';
-import { MathJaxNewcmFont } from '@mathjax/mathjax-newcm-font/js/svg.js';
+import { MathJaxModernFont } from '@mathjax/mathjax-modern-font/js/svg.js';
 import { dynamicFonts } from './fonts';
 
 /**
@@ -27,7 +27,7 @@ export type MathResult = { svg: string; error?: undefined } | { svg?: undefined;
 const adaptor = liteAdaptor();
 RegisterHTMLHandler(adaptor);
 
-const FONT_PREFIX = '@mathjax/mathjax-newcm-font/js/svg/dynamic/';
+const FONT_PREFIX = '@mathjax/mathjax-modern-font/js/svg/dynamic/';
 mathjax.asyncLoad = (file: string) => {
   const name = file.startsWith(FONT_PREFIX) ? file.slice(FONT_PREFIX.length).replace(/\.js$/, '') : '';
   const load = dynamicFonts[name];
@@ -43,7 +43,7 @@ const document = mathjax.document('', {
     },
   }),
   // One <svg> per formula: inline math is never broken across lines.
-  OutputJax: new SVG({ fontData: MathJaxNewcmFont, fontCache: 'none', linebreaks: { inline: false } }),
+  OutputJax: new SVG({ fontData: MathJaxModernFont, fontCache: 'none', linebreaks: { inline: false } }),
 });
 
 const cache = new Map<string, MathResult>();

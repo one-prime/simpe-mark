@@ -171,14 +171,22 @@ Everything distributed carries the notices of what it contains, built from the b
   extension's notices credit those of every package of ours it bundles.
 - Texts no installed package provides are kept verbatim in `licenses/`.
 
-**Open question — MathJax's font.** `@mathjax/mathjax-newcm-font` is labeled Apache-2.0 but
-ships no license file, and its source repository (`mathjax/MathJax-fonts`) is not public.
-MathJax says it is based on New Computer Modern, whose fonts are under the GUST Font License
-(LPPL 1.3c), except NewCM10-Regular, NewCMUncial and NewCM*Devanagari: GPL-3.0-or-later with
-a Font Exception and a Distribution Exception since NewCM 8.0.0. The Distribution Exception
-does not hold for a changed glyph set, which a MathJax font is. Which NewCM version MathJax
-built from is not stated. The notices include MathJax's Apache text and all of New Computer
-Modern's license texts; only MathJax can say which applies.
+**Math font: Latin Modern.** MathJax's default font, `mathjax-newcm`, is labeled Apache-2.0
+but ships no license file, and its source repository is not public. MathJax says it is based
+on New Computer Modern, whose fonts are under the GUST Font License except, since NewCM
+8.0.0, NewCM10-Regular, NewCMUncial and NewCM*Devanagari: GPL-3.0-or-later with a Font
+Exception and a Distribution Exception that does not hold for a changed glyph set (which a
+MathJax font is). Which NewCM version MathJax used is not stated. So math is drawn with
+`mathjax-modern`, "a version of Latin-Modern": the font New Computer Modern grew from, so it
+looks the same, and under the GUST Font License only (`licenses/LatinModern-License.txt`).
+Also considered: KaTeX like VS Code's preview (MIT with license files, but HTML and web fonts,
+no SVG for the canvas) and MathJax's TeX font, probably GitHub's (its license has been an
+open MathJax issue, #1856, since 2017).
+
+MathJax's SVG output imports its default font through the package import `#default-font/*`
+whatever font it is given, so a bundle would still include New Computer Modern. Every Vite
+config aliases that import to Latin Modern (`scripts/mathjax-font.mjs`); the strict notices
+check is what found it. Hosts that bundle `@simple-mark/math` need the same alias.
 
 ### Links
 
@@ -215,8 +223,8 @@ lines are laid out on a column grid (wide characters exactly two columns). Edito
 (preview padding, image max height, quote bar) are converted to em so a canvas text at any
 font size matches the editor at 15px. What gets previewed below which line
 (`previewBlocks`, `mathSource`) lives in `model` and is shared with the editor.
-Side-by-side check (`npm run dev -w @simple-mark/canvas`): formula 212.7×50.2 vs
-214.3×50.5 px, total vertical drift 1.6 px over 936 px.
+Side-by-side check (`npm run dev -w @simple-mark/canvas`, with New Computer Modern): formula
+212.7×50.2 vs 214.3×50.5 px, total vertical drift 1.6 px over 936 px.
 
 Every line is exactly line height × font size, and all runs on a line share the baseline of
 the line's own font (`TextRun.lineFont`). The editor keeps to that: a browser grows a line
@@ -331,8 +339,8 @@ overlay layer would be missing from both and break z-order.
 - MathJax 4 notes: inline formulas are split into several `<svg>`s at `=` unless
   `linebreaks: { inline: false }`; `TexError` is not an `Error` subclass; rare
   glyph ranges load font parts on demand, so `packages/math/src/fonts.ts` maps
-  each of the 40 parts to a static `import()` (bundlers make lazy chunks of
-  them). The list matches font 4.1.3, so `@mathjax/src` is pinned to 4.1.3.
+  each of the 26 parts of the Latin Modern font to a static `import()` (bundlers make
+  lazy chunks of them). The list matches font 4.1.3, so `@mathjax/src` is pinned to 4.1.3.
 - Untrusted documents: the TeX packages `html`, `texhtml`, `textmacros`,
   `require` and `autoload` are left out (`\href`, `\style`, raw HTML, loading
   code). Image previews load whatever URL a document names — hosts should limit

@@ -19,7 +19,8 @@ const view = createEditor(document.getElementById('editor')!, {
   table. Korean, Chinese and Japanese line up (drawn exactly two columns wide), and typing
   them with an IME is safe.
 - **Images** and `$$` math preview below their source; `$inline$` math in a tooltip. Math
-  (`@simple-mark/math`) loads only when a document has math.
+  (`@simple-mark/math`) loads only when a document has math; when bundling, alias MathJax's
+  `#default-font/*` as its README shows, so MathJax's default font isn't bundled.
 - **Colors** in fenced code blocks, as VS Code's Markdown preview colors them
   (`@simple-mark/highlight`, highlight.js; each language loads when a block needs it), and
   in TeX: commands, brackets by nesting depth, an unmatched brace in red.

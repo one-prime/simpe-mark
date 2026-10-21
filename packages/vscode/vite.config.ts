@@ -1,10 +1,13 @@
 import { defineConfig } from 'vite';
+import { fontAlias } from '../../scripts/mathjax-font.mjs';
 import { noticesPlugin } from '../../scripts/third-party.mjs';
 
 // The webview bundle: dist/webview/webview.js plus chunks it imports on demand (MathJax and its
 // font parts). Relative chunk URLs resolve against webview.js, which is a webview resource URI.
 export default defineConfig({
   base: './',
+  // MathJax's default font stays out: the math is drawn with ours (see scripts/mathjax-font.mjs).
+  resolve: { alias: [fontAlias] },
   // Everything the bundle includes from other projects, with its license (packaged in the .vsix).
   plugins: [
     noticesPlugin({

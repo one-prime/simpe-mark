@@ -25,7 +25,8 @@ paintMarkdown(ctx, layout, { image: (src) => loaded(src), math: (tex, color) => 
 
 - `layoutMarkdown` has no DOM dependency: text widths come from your `measure`.
 - Math is rendered by `@simple-mark/math` (MathJax, loaded the first time it's needed) and
-  drawn as an image in the text's color.
+  drawn as an image in the text's color. When bundling, alias MathJax's default font as the
+  `@simple-mark/math` README shows.
 - Code blocks get colors from `highlight` (`createHighlighter` from `@simple-mark/highlight`),
   TeX gets its colors without one; both as in the editor.
 

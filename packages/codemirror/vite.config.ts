@@ -1,8 +1,9 @@
-import { readdirSync, writeFileSync } from 'node:fs';
+import { writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { defineConfig } from 'vite';
+import { fontAlias, fontParts } from '../../scripts/mathjax-font.mjs';
 
 // Demo server. POST /debug-report (sent by the demo's ?debug mode) is saved to
 // <tmp>/simple-mark-debug-report.json, so a run in a real browser can be studied.
@@ -12,10 +13,9 @@ export default defineConfig({
   // MathJax font parts are imported on demand; prepare them at startup, so the dev server
   // never discovers them mid-session and serves a page an outdated chunk (504).
   optimizeDeps: {
-    include: readdirSync(new URL('../../node_modules/@mathjax/mathjax-newcm-font/mjs/svg/dynamic', import.meta.url))
-      .filter((file) => file.endsWith('.js'))
-      .map((file) => `@mathjax/mathjax-newcm-font/js/svg/dynamic/${file}`),
+    include: fontParts(),
   },
+  resolve: { alias: [fontAlias] },
   plugins: [
     {
       name: 'simple-mark-debug-report',
