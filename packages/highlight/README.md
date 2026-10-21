@@ -20,4 +20,4 @@ const { spans } = markdownStyles(tree, 0, text.length, { slice: (a, b) => text.s
   `tsx` → JSX, `jsonc` → JSON). Blocks without a known language stay plain; there is no
   guessing.
 
-MIT
+MIT. Values copied from other projects are credited in `THIRD_PARTY_NOTICES.txt`.

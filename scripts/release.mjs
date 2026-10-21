@@ -17,6 +17,7 @@ import { execFileSync, spawn } from 'node:child_process';
 import { copyFileSync, mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { build } from 'tsdown';
+import { DESIGN, noBundledPackages, thirdPartyNotices } from './third-party.mjs';
 
 /** In dependency order: a package is published after the packages it uses. */
 const PACKAGES = ['model', 'math', 'highlight', 'canvas', 'codemirror'];
@@ -78,6 +79,8 @@ for (const name of PACKAGES) {
     clean: true,
     // Everything the package depends on stays an import; only its own code is bundled.
     deps: { neverBundle: Object.keys(dependencies).map((dep) => new RegExp(`^${dep}(/|$)`)) },
+    // Bundled third-party code would ship without its license notice.
+    plugins: [noBundledPackages()],
     logLevel: 'warn',
   });
 
@@ -106,6 +109,10 @@ for (const name of PACKAGES) {
   );
   copyFileSync(join(dir, 'README.md'), join(dist, 'README.md'));
   copyFileSync(join(root, 'LICENSE'), join(dist, 'LICENSE'));
+  if (DESIGN[name]) {
+    const intro = `${pkg.name} is MIT-licensed (see LICENSE). Its dependencies come with their own licenses;\nit copies the values described below from these projects.`;
+    writeFileSync(join(dist, 'THIRD_PARTY_NOTICES.txt'), thirdPartyNotices({ title: `${pkg.name}: third-party notices`, intro, own: [name] }));
+  }
 
   // A rerun after a partial release publishes only what is missing (versions can't be reused).
   const published = mode === 'publish' && isPublished(pkg.name, pkg.version);

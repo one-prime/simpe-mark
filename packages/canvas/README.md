@@ -29,4 +29,4 @@ paintMarkdown(ctx, layout, { image: (src) => loaded(src), math: (tex, color) => 
 - Code blocks get colors from `highlight` (`createHighlighter` from `@simple-mark/highlight`),
   TeX gets its colors without one; both as in the editor.
 
-MIT
+MIT. Values copied from other projects are credited in `THIRD_PARTY_NOTICES.txt`.

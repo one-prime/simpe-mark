@@ -15,4 +15,6 @@ const { svg, error } = await renderMath('\\sum_{k=1}^n k = \\frac{n(n+1)}{2}', t
 - TeX packages that create links or HTML (`\href`, `\style`, raw HTML) and packages that
   load code are not included, so documents from anyone are safe to render.
 
-MIT
+MIT. MathJax and its font come with their own licenses (Apache-2.0, as MathJax labels
+them); MathJax says the font is based on New Computer Modern, whose fonts are under the GUST
+Font License or, for a few, GPL-3.0 with a font exception.

@@ -152,6 +152,34 @@ MathJax's own types, which fail strict checks, into users' type checking. Checke
 installing the three `.tgz` files into an empty project (TypeScript 5 strict with library
 checks, Vite build, browser run with lazy math). npm publishing needs 2FA on the account.
 
+### Licenses
+
+Everything distributed carries the notices of what it contains, built from the build itself
+(`scripts/third-party.mjs`), and the builds fail instead of shipping without them:
+
+- **VS Code extension:** the webview bundles 22 packages (CodeMirror, Lezer and helpers: MIT;
+  highlight.js: BSD-3-Clause; MathJax and its font: Apache-2.0). A Vite plugin lists every
+  package in the bundle, lazy chunks included, and writes `THIRD_PARTY_NOTICES.txt` (packaged
+  in the `.vsix`) with each full license text and Apache NOTICE files. A license outside MIT,
+  ISC, 0BSD, BSD-2/3-Clause and Apache-2.0, or a package without license text, stops the build.
+  The host build (esbuild) fails if it bundles any third-party code.
+- **npm packages:** bundle no third-party code (a tsdown plugin fails the release if they
+  would); dependencies install with their own licenses.
+- **Design references:** values our code copies (github-markdown-css sizes and colors; VS
+  Code's preview styles, bracket colors and fence-name renames; highlight.js's VS 2015 colors
+  and language aliases) are credited with their licenses in each package's notices; the
+  extension's notices credit those of every package of ours it bundles.
+- Texts no installed package provides are kept verbatim in `licenses/`.
+
+**Open question — MathJax's font.** `@mathjax/mathjax-newcm-font` is labeled Apache-2.0 but
+ships no license file, and its source repository (`mathjax/MathJax-fonts`) is not public.
+MathJax says it is based on New Computer Modern, whose fonts are under the GUST Font License
+(LPPL 1.3c), except NewCM10-Regular, NewCMUncial and NewCM*Devanagari: GPL-3.0-or-later with
+a Font Exception and a Distribution Exception since NewCM 8.0.0. The Distribution Exception
+does not hold for a changed glyph set, which a MathJax font is. Which NewCM version MathJax
+built from is not stated. The notices include MathJax's Apache text and all of New Computer
+Modern's license texts; only MathJax can say which applies.
+
 ### Links
 
 Ctrl+Click (⌘+Click on macOS) follows a link; a plain click places the cursor, because link

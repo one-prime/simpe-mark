@@ -20,4 +20,4 @@ const look = resolveLook(['h1'], ['strong'], defaultTheme);
 const aligned = renderTable(parseTable(['|a|b|', '|-|-:|', '|한글|2|'])).lines;
 ```
 
-MIT
+MIT. Values copied from other projects are credited in `THIRD_PARTY_NOTICES.txt`.

@@ -69,3 +69,9 @@ Hangul is 1.84 columns wide, so a row with about six Korean characters ends one 
 - Images load from the document's folder, the workspace and `https:` URLs only.
 - Math supports common TeX packages; commands that create links or HTML (`\href`,
   `\style`) are not available.
+
+## License
+
+MIT. The extension includes CodeMirror, Lezer, MathJax (with its font) and highlight.js, each
+under its own license; `THIRD_PARTY_NOTICES.txt` in the extension has their full license
+texts, along with credits for the styles of VS Code's Markdown preview it follows.

@@ -31,4 +31,4 @@ const view = createEditor(document.getElementById('editor')!, {
 - Accurate scroll heights for documents with many images and formulas.
 - `simpleMark(theme)` gives the extensions for your own `EditorState`.
 
-MIT
+MIT. Values copied from other projects are credited in `THIRD_PARTY_NOTICES.txt`.
