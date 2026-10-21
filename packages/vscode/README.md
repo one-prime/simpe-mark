@@ -1,9 +1,26 @@
-# Simple-Mark
+# Simple-Mark for VS Code
 
 Edit Markdown with its formatting shown — and none of its syntax hidden.
 
 `# Heading` stays `# Heading`: the `#` is dimmed and the heading is large. `**bold**` keeps
-its `**`. The file on disk is exactly what you typed, byte for byte.
+its `**`. Markdown stays editable text, and an unedited document keeps its original line
+endings. Table navigation can reformat table spacing as described below.
+
+## Installation
+
+Requires **VS Code 1.100.0 or newer**.
+
+### From the Marketplace
+
+Open Extensions in VS Code and search for `@id:Simple-Mark.simple-mark`, or visit the
+[Simple-Mark Marketplace listing](https://marketplace.visualstudio.com/items?itemName=Simple-Mark.simple-mark).
+Select **Install**, then open a Markdown file.
+
+### From a VSIX file
+
+If you have a `simple-mark-<version>.vsix` file, open the Command Palette, run
+**Extensions: Install from VSIX…**, and select it. To build a VSIX yourself, see
+[Building from source](#building-from-source).
 
 ## Features
 
@@ -40,7 +57,12 @@ Simple-Mark.
 To keep the plain text editor as your default instead, add to your settings:
 
 ```json
-"workbench.editorAssociations": { "*.md": "default" }
+{
+  "workbench.editorAssociations": {
+    "*.md": "default",
+    "*.markdown": "default"
+  }
+}
 ```
 
 ## Korean, Chinese and Japanese text in tables
@@ -72,6 +94,45 @@ Hangul is 1.84 columns wide, so a row with about six Korean characters ends one 
 - Images load from the document's folder, the workspace and `https:` URLs only.
 - Math supports common TeX packages; commands that create links or HTML (`\href`,
   `\style`) are not available.
+
+## Source and feedback
+
+The extension is maintained in the
+[Simple-Mark repository](https://github.com/one-prime/simple-mark), alongside the editor
+libraries it uses. Its source is in
+[`packages/vscode`](https://github.com/one-prime/simple-mark/tree/main/packages/vscode).
+
+[Report a bug or request a feature](https://github.com/one-prime/simple-mark/issues).
+For bugs, include your VS Code version, operating system, and a small Markdown example
+that reproduces the issue.
+
+## Building from source
+
+Use Node.js 24 or newer and npm. Clone the full repository so the extension can use the
+shared workspace packages and build scripts:
+
+```bash
+git clone https://github.com/one-prime/simple-mark.git
+cd simple-mark
+npm ci
+npm run package -w packages/vscode
+```
+
+The package command builds the extension and writes
+`packages/vscode/simple-mark-<version>.vsix`. Install it using **Extensions: Install from
+VSIX…** in VS Code.
+
+From the repository root, run type checks and tests with:
+
+```bash
+npm run typecheck
+npm test
+```
+
+For the webview smoke check, first build the extension with
+`npm run build -w packages/vscode`, then run `npm run smoke -w packages/vscode`.
+The smoke check requires Chromium in Playwright's cache or a `CHROMIUM_PATH` environment
+variable pointing to a Chromium executable.
 
 ## License
 
