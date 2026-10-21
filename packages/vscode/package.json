@@ -2,7 +2,7 @@
   "name": "simple-mark",
   "displayName": "SimpleMark",
   "description": "Edit Markdown with its formatting shown and none of its syntax hidden.",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "publisher": "simple-mark",
   "license": "MIT",
   "private": true,

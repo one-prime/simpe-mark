@@ -117,7 +117,7 @@ class MarkdownDecorations {
   private build(view: EditorView): DecorationSet {
     const { doc } = view.state;
     const { from, to } = view.viewport;
-    const { blocks, spans } = markdownStyles(syntaxTree(view.state), from, to);
+    const { blocks, spans } = markdownStyles(syntaxTree(view.state), from, to, (a, b) => doc.sliceString(a, b));
 
     /** Block styles of each line, and the styles whose block starts or ends there. */
     const lines = new Map<number, { styles: Set<BlockStyle>; first: Set<BlockStyle>; last: Set<BlockStyle> }>();

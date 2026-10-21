@@ -34,6 +34,9 @@ export function webviewHtml({ cspSource, scriptUri, nonce }: PageOptions): strin
   html, body { height: 100%; margin: 0; padding: 0; }
   body { background: var(--vscode-editor-background); color: var(--vscode-editor-foreground); }
   #editor { height: 100%; }
+  /* Token colors of VS Code's Markdown preview (media/highlight.css), by theme kind. */
+  body { --sm-keyword: #569cd6; --sm-comment: #57a64a; }
+  body.vscode-light, body.vscode-high-contrast-light { --sm-keyword: #00f; --sm-comment: #008000; }
 </style>
 </head>
 <body>

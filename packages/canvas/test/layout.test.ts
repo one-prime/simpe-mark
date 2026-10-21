@@ -33,6 +33,18 @@ describe('layoutMarkdown', () => {
     expect(result.runs[0]!.color).toBe('#111');
   });
 
+  it('colors the TeX inside math like the editor', () => {
+    const result = layout('$\\sqrt{x}$');
+    expect(result.runs.map((r) => [r.text, r.color])).toEqual([
+      ['$', defaultTheme.inline.mark.color],
+      ['\\sqrt', defaultTheme.inline.mathCommand.color],
+      ['{', defaultTheme.inline.mathBracket1.color],
+      ['x', '#111'],
+      ['}', defaultTheme.inline.mathBracket1.color],
+      ['$', defaultTheme.inline.mark.color],
+    ]);
+  });
+
   it('makes headings bigger, with taller lines, and keeps the # dimmed', () => {
     const result = layout('# Title\nbody');
     const [hash, title, body] = result.runs;

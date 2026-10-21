@@ -1,6 +1,6 @@
 {
   "name": "@simple-mark/math",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "private": true,
   "type": "module",
   "description": "TeX to self-contained SVG with MathJax. Pure TypeScript, no DOM.",

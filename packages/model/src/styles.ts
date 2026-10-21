@@ -3,13 +3,32 @@
 // CodeMirror editor, a canvas) draws from this one result, so they never disagree.
 
 import type { SyntaxNode, SyntaxNodeRef, Tree } from '@lezer/common';
+import { mathTokens, type MathPiece } from './math-tokens';
 
 /** Styles of whole lines, in precedence order (later wins when two set the same property). */
 export const BLOCK_STYLES = ['quote', 'codeblock', 'mathblock', 'table', 'tableHeader', 'tableRowAlt', 'hr', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6'] as const;
 export type BlockStyle = (typeof BLOCK_STYLES)[number];
 
-/** Styles of text ranges, in precedence order ("mark" last, so markers stay dimmed everywhere). */
-export const INLINE_STYLES = ['link', 'strong', 'em', 'strike', 'code', 'math', 'url', 'mark'] as const;
+/**
+ * Styles of text ranges, in precedence order ("mark" last, so markers stay dimmed everywhere).
+ * The math* ones color a formula's TeX (see math-tokens.ts).
+ */
+export const INLINE_STYLES = [
+  'link',
+  'strong',
+  'em',
+  'strike',
+  'code',
+  'math',
+  'mathCommand',
+  'mathComment',
+  'mathBracket1',
+  'mathBracket2',
+  'mathBracket3',
+  'mathBracketError',
+  'url',
+  'mark',
+] as const;
 export type InlineStyle = (typeof INLINE_STYLES)[number];
 
 /** A block construct; every line it touches gets `style`. Blocks may nest (a heading in a quote). */
@@ -93,11 +112,19 @@ function topLevelBlock(tree: Tree, pos: number, side: 1 | -1): SyntaxNode | null
   return node?.parent ? node : null;
 }
 
+/** The TeX of a math node as pieces of the document (without delimiters or quote markers). */
+function mathPieces(node: SyntaxNode, slice: (from: number, to: number) => string): MathPiece[] {
+  if (node.name === 'BlockMath') return node.getChildren('MathText').map((part) => ({ from: part.from, text: slice(part.from, part.to) }));
+  const marks = node.getChildren('MathMark');
+  return marks.length < 2 ? [] : [{ from: marks[0]!.to, text: slice(marks[0]!.to, marks[1]!.from) }];
+}
+
 /**
  * Styles for the part of `tree` between `from` and `to` (a viewport). The range grows to whole
- * top-level blocks, so constructs that cross its edges keep both their markers.
+ * top-level blocks, so constructs that cross its edges keep both their markers. With `slice`
+ * (reads the document), the TeX inside math gets its colors too.
  */
-export function markdownStyles(tree: Tree, from = 0, to = tree.length): MarkdownStyles {
+export function markdownStyles(tree: Tree, from = 0, to = tree.length, slice?: (from: number, to: number) => string): MarkdownStyles {
   from = Math.min(from, topLevelBlock(tree, from, 1)?.from ?? from);
   to = Math.max(to, topLevelBlock(tree, to, -1)?.to ?? to);
   const blocks: BlockRange[] = [];
@@ -112,6 +139,7 @@ export function markdownStyles(tree: Tree, from = 0, to = tree.length): Markdown
       if (block) blocks.push({ from: node.from, to: node.to, style: block });
       if (node.name === 'Table') tableRows = 0;
       if (node.name === 'TableRow' && ++tableRows % 2 === 0) blocks.push({ from: node.from, to: node.to, style: 'tableRowAlt' });
+      if (slice && (node.name === 'InlineMath' || node.name === 'BlockMath')) inline.push(...mathTokens(mathPieces(node.node, slice)));
       // An escape is "\" plus the escaped character; only the backslash is syntax.
       if (node.name === 'Escape') {
         inline.push({ from: node.from, to: node.from + 1, style: 'mark' });

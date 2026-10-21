@@ -173,7 +173,7 @@ export function layoutMarkdown(source: string, options: LayoutOptions): Markdown
   // One character per line break, so offsets match the parser's positions.
   const text = source.replace(/\r\n?/g, '\n');
   const tree = markdownParser.parse(text);
-  const { blocks, spans } = markdownStyles(tree);
+  const { blocks, spans } = markdownStyles(tree, 0, text.length, (from, to) => text.slice(from, to));
 
   const lineStarts = [0];
   for (let i = text.indexOf('\n'); i !== -1; i = text.indexOf('\n', i + 1)) lineStarts.push(i + 1);

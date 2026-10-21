@@ -42,8 +42,8 @@ GFM (tables, task lists, strikethrough, autolinks) + math (`$…$`, `$$…$$`).
 | Headings, emphasis, code, quotes, lists, links | Markers dimmed, content styled |
 | Tables | Raw pipe text, styled as a grid (see below) |
 | Images | Source visible; rendered image widget below the line |
-| Block math `$$…$$` | Source visible; rendered math below the block |
-| Inline math `$…$` | Source visible; rendered math in a tooltip on hover / cursor inside |
+| Block math `$$…$$` | Source visible, TeX colored; rendered math below the block |
+| Inline math `$…$` | Source visible, TeX colored; rendered math in a tooltip on hover / cursor inside |
 
 ### Look
 
@@ -80,6 +80,13 @@ height that is not in the text.
   render works in the CM6 widget, on DrawLayout's canvas, and in its CLI render.
 - On parse error, show the source marked with an error style instead of a broken
   widget.
+- The TeX source is colored as VS Code colors it (`model/src/math-tokens.ts`, as inline
+  styles, so the editor and the canvas agree): commands (`\frac`, `\{`) like keywords,
+  `{}()[]` by nesting depth in three colors (bracket pair colorization), `%` comments. An
+  unmatched brace is red — TeX needs braces balanced — but an unmatched `(` or `[` stays
+  plain, since `[0, 1)` is valid math; `(` and `[` never pair across a brace. The VS Code host
+  takes the bracket colors from the user's theme (`--vscode-editorBracketHighlight-*`) and
+  the keyword/comment colors of the Markdown preview by theme kind (`--sm-*` in `html.ts`).
 
 ## Known pitfalls
 
