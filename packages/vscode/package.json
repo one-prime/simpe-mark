@@ -1,10 +1,15 @@
 {
   "name": "simple-mark",
-  "displayName": "SimpleMark",
+  "displayName": "Simple-Mark",
   "description": "Edit Markdown with its formatting shown and none of its syntax hidden.",
-  "version": "0.1.3",
+  "version": "0.1.4",
   "publisher": "simple-mark",
   "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/one-prime/simple-mark.git",
+    "directory": "packages/vscode"
+  },
   "private": true,
   "type": "module",
   "engines": {
@@ -26,7 +31,7 @@
     "customEditors": [
       {
         "viewType": "simple-mark.editor",
-        "displayName": "SimpleMark",
+        "displayName": "Simple-Mark",
         "selector": [
           { "filenamePattern": "*.md" },
           { "filenamePattern": "*.markdown" }
@@ -37,14 +42,14 @@
     "commands": [
       {
         "command": "simple-mark.open",
-        "title": "Open with SimpleMark",
-        "category": "SimpleMark",
+        "title": "Open with Simple-Mark",
+        "category": "Simple-Mark",
         "icon": "$(preview)"
       },
       {
         "command": "simple-mark.openAsText",
         "title": "Open as Text",
-        "category": "SimpleMark",
+        "category": "Simple-Mark",
         "icon": "$(go-to-file)"
       }
     ],

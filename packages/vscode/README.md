@@ -1,4 +1,4 @@
-# SimpleMark
+# Simple-Mark
 
 Edit Markdown with its formatting shown — and none of its syntax hidden.
 
@@ -19,7 +19,7 @@ its `**`. The file on disk is exactly what you typed, byte for byte.
   paths starting with `/`).
 - **Links**: Ctrl+Click (⌘+Click on macOS) opens a link: web pages in your browser (VS Code
   asks first), `#heading` links jump within the document, and paths open in VS Code — images
-  in its image viewer, Markdown files in SimpleMark. Paths are relative to the document. A
+  in its image viewer, Markdown files in Simple-Mark. Paths are relative to the document. A
   path starting with `/` is an absolute path on disk, or else relative to the workspace folder
   (as in VS Code's own Markdown preview); images are found the same way. Click an image
   preview to open the image.
@@ -27,12 +27,12 @@ its `**`. The file on disk is exactly what you typed, byte for byte.
 
 ## Usage
 
-SimpleMark is the default editor for `.md` and `.markdown` files: open one and it opens in
-SimpleMark.
+Simple-Mark is the default editor for `.md` and `.markdown` files: open one and it opens in
+Simple-Mark.
 
 - **Open as Text** in the editor title bar (or **Reopen Editor With… → Text Editor**)
   shows the plain text.
-- **Open with SimpleMark** in the title bar or the Explorer context menu switches back.
+- **Open with Simple-Mark** in the title bar or the Explorer context menu switches back.
 
 To keep the plain text editor as your default instead, add to your settings:
 
@@ -44,7 +44,7 @@ To keep the plain text editor as your default instead, add to your settings:
 
 Tables are padded counting each Korean, Chinese or Japanese character as two columns
 (Unicode East Asian Width, the same rule Prettier uses), so the saved text is aligned.
-SimpleMark draws these characters exactly two columns wide, so its tables line up with any
+Simple-Mark draws these characters exactly two columns wide, so its tables line up with any
 font.
 
 VS Code's plain text editor relies on its font instead. Unless the font draws these
