@@ -10,8 +10,5 @@
   "include": [
     "packages/*/src",
     "packages/*/demo"
-  ],
-  "exclude": [
-    "packages/vscode"
   ]
 }

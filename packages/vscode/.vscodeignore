@@ -1,8 +1,0 @@
-**
-!dist/extension.cjs
-!dist/webview/**
-!package.json
-!icon.png
-!README.md
-!LICENSE
-!THIRD_PARTY_NOTICES.txt
